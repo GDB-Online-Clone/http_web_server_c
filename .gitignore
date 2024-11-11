@@ -56,3 +56,6 @@ prog
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# doxygen generated documents
+docs/*
