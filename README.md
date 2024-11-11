@@ -6,3 +6,6 @@
 - http/1.1 스펙에서 설계되었습니다.
 - 웹서버 ↔ 라우터 구조를 가집니다.
 - http 프로토콜만 지원합니다.
+
+## documents
+- 코드 베이스 문서들은 <https://35.196.230.116/GDB-Online-Clone/Http-Web-Server-C/annotated.html> 여기서 확인하실 수 있습니다.
