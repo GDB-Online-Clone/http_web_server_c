@@ -8,4 +8,4 @@
 - http 프로토콜만 지원합니다.
 
 ## documents
-- 코드 베이스 문서들은 <https://35.196.230.116/GDB-Online-Clone/Http-Web-Server-C/annotated.html> 여기서 확인하실 수 있습니다.
+- 코드 베이스 문서들은 <https://sony-string-net/GDB-Online-Clone/Http-Web-Server-C/annotated.html> 여기서 확인하실 수 있습니다.
