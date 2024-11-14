@@ -1,24 +1,24 @@
 #include "http.h"
 
-struct http_query_parameter* insert_qurey_parameter(char* key, char* value){
-    
-}
-
 /**
- * @brief Parses URL query parameters string into a structured format
- * @param parameters_string The raw query parameter string (format: "key1=value1&key2=value2...")
- * @return struct http_query_parameters A structure containing all parsed query parameters
+ * @brief Parses a single HTTP query parameter.
  * 
- * @details This function takes a URL query parameter string and breaks it down into individual
- * key-value pairs. The string should be in the format "key1=value1&key2=value2&...".
- * Each pair is separated by '&' and each key and value within a pair is separated by '='.
+ * This function takes a key and a value as input and returns a 
+ * struct http_query_parameter containing the parsed key and value.
  * 
- * The function:
- * - Allocates memory for up to 10 query parameters
- * - Splits the string on '&' characters to separate parameters
- * - For each parameter, splits on '=' to separate key and value
- * - Creates a new query_parameter structure for each pair
- * - Stores all parameters in the returned http_query_parameters structure
+ * @param key The key of the query parameter.
+ * @param value The value of the query parameter.
+ * @return struct http_query_parameter The parsed query parameter.
+ */
+struct http_query_parameter parse_http_query_parameter(char *key, char *value){
+
+    struct http_query_parameter query_parameter;
+    
+    query_parameter.key = key;
+    query_parameter.value = value;
+    
+    return query_parameter;
+}
  * 
  * @warning The caller is responsible for freeing the allocated memory
  * @note The maximum number of parameters is limited to 10
