@@ -81,15 +81,38 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
 }
 
 /**
- * @brief Frees the memory allocated for an http_query_parameters structure.
+ * @brief Frees memory allocated for query parameters.
  * 
- * @param query_parameters The http_query_parameters structure to free.
+ * This function frees the memory allocated for each query parameter's key and value,
+ * as well as the memory allocated for the struct http_query_parameter itself. It also
+ * frees the memory allocated for the array of query parameters and resets the size.
+ * 
+ * @param query_parameters Pointer to the struct http_query_parameters to be freed.
  */
 void free_query_parameters(struct http_query_parameters* query_parameters){
-    for (int i = 0; i < query_parameters->size; i++) {
+    
+    if (!query_parameters) {
+        return;
+    }
+
+    if (query_parameters->parameters){
+        for (int i = 0; i < query_parameters->size; i++){
+            if (query_parameters->parameters[i]) {
+
+                // key와 value 메모리 해제
+                free(query_parameters->parameters[i]->key);
+                free(query_parameters->parameters[i]->value);
+                
+                // parameter 구조체 자체 해제
         free(query_parameters->parameters[i]);
     }
+        }
+
     free(query_parameters->parameters);
+        query_parameters->parameters = NULL;
+    }
+    
+    query_parameters->size = 0;
 }
 
 /**
