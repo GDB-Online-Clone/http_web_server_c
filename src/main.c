@@ -104,11 +104,11 @@ void free_query_parameters(struct http_query_parameters* query_parameters){
                 free(query_parameters->parameters[i]->value);
                 
                 // parameter 구조체 자체 해제
-        free(query_parameters->parameters[i]);
-    }
+                free(query_parameters->parameters[i]);
+            }
         }
 
-    free(query_parameters->parameters);
+        free(query_parameters->parameters);
         query_parameters->parameters = NULL;
     }
     
