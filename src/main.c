@@ -44,6 +44,18 @@ struct http_query_parameters parse_qurey_parameters(char* parameters_string){
 }
 
 /**
+ * @brief Frees the memory allocated for an http_query_parameters structure.
+ * 
+ * @param query_parameters The http_query_parameters structure to free.
+ */
+void free_query_parameters(struct http_query_parameters* query_parameters){
+    for (int i = 0; i < query_parameters->size; i++) {
+        free(query_parameters->parameters[i]);
+    }
+    free(query_parameters->parameters);
+}
+
+/**
  * @brief Build Test 용
  * 
  * @return int 프로그램 종료 상태

@@ -50,10 +50,12 @@ struct http_header* insert_header(char* key, char* value);
 struct http_header* find_header(char* key);
 struct http_headers parse_http_headers(char* headers_string);
 
-struct http_header* insert_qurey_parameter(char* key, char* value);
+// 쿼리 파라미터
+struct http_query_parameter* insert_qurey_parameter(char* key, char* value);
 
 struct http_qurey_parameter* find_qurey_parameter(char* key);
 struct http_qurey_parameters parse_qurey_parameters(char* parameters_string);
+void free_query_parameters(struct http_query_parameters* query_parameters);
 
 
 char* http_response_stringfy(struct http_response http_response);
