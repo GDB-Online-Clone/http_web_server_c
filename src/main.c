@@ -48,12 +48,22 @@ struct http_query_parameter* insert_query_parameter(char* key, char* value){
 }
 
 
+/**
+ * @brief Parses an entire query string into multiple query parameters.
+ * 
+ * This function takes a query string, parses it into individual key-value pairs,
+ * and stores them in a struct http_query_parameters. It allocates memory for 
+ * each query parameter and returns the struct containing all parameters.
+ * 
+ * @param parameters_string The query string to be parsed.
+ * @return struct http_query_parameters The parsed query parameters.
  */
-struct http_query_parameters parse_qurey_parameters(char* parameters_string){
+struct http_query_parameters parse_query_parameters(char* parameters_string){
     
     struct http_query_parameters query_parameters;
     query_parameters.size = 0;
-    query_parameters.parameters = (struct http_query_parameter**)malloc(sizeof(struct http_query_parameter*) * 10);
+    query_parameters.parameters = 
+        (struct http_query_parameter**)malloc(sizeof(struct http_query_parameter*) * 10);
     
     char* token = strtok(parameters_string, "&");
     
@@ -61,7 +71,8 @@ struct http_query_parameters parse_qurey_parameters(char* parameters_string){
         char* key = strtok(token, "=");
         char* value = strtok(NULL, "=");
 
-        struct http_query_parameter* query_parameter = insert_qurey_parameter(key, value);
+        struct http_query_parameter* query_parameter = 
+            insert_query_parameter(key, value);
         
         query_parameters.parameters[query_parameters.size++] = query_parameter;
         token = strtok(NULL, "&");
