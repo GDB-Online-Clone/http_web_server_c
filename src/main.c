@@ -4,11 +4,11 @@
  * @brief Parses a single HTTP query parameter.
  * 
  * This function takes a key and a value as input and returns a 
- * struct http_query_parameter containing the parsed key and value.
+ * struct http_query_parameter containing the parsedParam key and value.
  * 
  * @param key The key of the query parameter.
  * @param value The value of the query parameter.
- * @return struct http_query_parameter The parsed query parameter.
+ * @return struct http_query_parameter The parsedParam query parameter.
  */
 struct http_query_parameter parse_http_query_parameter(char *key, char *value){
 
@@ -32,7 +32,7 @@ struct http_query_parameter parse_http_query_parameter(char *key, char *value){
  */
 struct http_query_parameter* insert_query_parameter(char* key, char* value){
 
-    struct http_query_parameter parsed = parse_http_query_parameter(key, value);
+    struct http_query_parameter parsedParam = parse_http_query_parameter(key, value);
 
     struct http_query_parameter* query_parameter = 
         (struct http_query_parameter*)malloc(sizeof(struct http_query_parameter));
@@ -41,8 +41,8 @@ struct http_query_parameter* insert_query_parameter(char* key, char* value){
         return NULL;
     }
 
-    query_parameter->key = parsed.key;
-    query_parameter->value = parsed.value;
+    query_parameter->key = parsedParam.key;
+    query_parameter->value = parsedParam.value;
     
     return query_parameter;
 }
@@ -55,8 +55,8 @@ struct http_query_parameter* insert_query_parameter(char* key, char* value){
  * and stores them in a struct http_query_parameters. It allocates memory for 
  * each query parameter and returns the struct containing all parameters.
  * 
- * @param parameters_string The query string to be parsed.
- * @return struct http_query_parameters The parsed query parameters.
+ * @param parameters_string The query string to be parsedParam.
+ * @return struct http_query_parameters The parsedParam query parameters.
  */
 struct http_query_parameters parse_query_parameters(char* parameters_string){
     
