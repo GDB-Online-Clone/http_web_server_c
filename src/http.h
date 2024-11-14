@@ -21,6 +21,7 @@
 
 enum http_status_code;
 enum http_method;
+enum http_version; 
 
 // GET /index.html HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n
 
@@ -81,6 +82,18 @@ enum http_method {
     HTTP_GET,
     HTTP_POST
 };
+
+/**
+ * @brief http version
+ * @note enum value has `int` type
+ */
+enum http_version {
+    HTTP_1_0, // HTTP/1.0
+    HTTP_1_1, // HTTP/1.1
+    HTTP_2_0, // HTTP/2.0
+    HTTP_3_0, // HTTP/3.0
+    HTTP_VERSION_UNKNOWN // Unknown version handling
+}
 
 /**
  * @brief route struct to define each route, mapped by URL path.
