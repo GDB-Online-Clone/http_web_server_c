@@ -19,9 +19,35 @@ struct http_query_parameter parse_http_query_parameter(char *key, char *value){
     
     return query_parameter;
 }
+
+/**
+ * @brief Allocates memory and stores a single HTTP query parameter.
  * 
- * @warning The caller is responsible for freeing the allocated memory
- * @note The maximum number of parameters is limited to 10
+ * This function parses a key and value into a struct http_query_parameter,
+ * allocates memory for it, and returns a pointer to the allocated memory.
+ * 
+ * @param key The key of the query parameter.
+ * @param value The value of the query parameter.
+ * @return struct http_query_parameter* Pointer to the allocated query parameter.
+ */
+struct http_query_parameter* insert_query_parameter(char* key, char* value){
+
+    struct http_query_parameter parsed = parse_http_query_parameter(key, value);
+
+    struct http_query_parameter* query_parameter = 
+        (struct http_query_parameter*)malloc(sizeof(struct http_query_parameter));
+    
+    if (!query_parameter) {
+        return NULL;
+    }
+
+    query_parameter->key = parsed.key;
+    query_parameter->value = parsed.value;
+    
+    return query_parameter;
+}
+
+
  */
 struct http_query_parameters parse_qurey_parameters(char* parameters_string){
     
