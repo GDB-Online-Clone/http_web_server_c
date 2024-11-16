@@ -65,7 +65,9 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
     query_parameters.parameters = 
         (struct http_query_parameter**)malloc(sizeof(struct http_query_parameter*) * 10);
     
+    /* '&' 구분자 처리 */
     char *save_ptr1;
+    /* '=' 구분자 처리 */
     char *save_ptr2;
 
     char* token = strtok_r(parameters_string, "&",&save_ptr1);
