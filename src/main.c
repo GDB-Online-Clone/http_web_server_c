@@ -65,17 +65,20 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
     query_parameters.parameters = 
         (struct http_query_parameter**)malloc(sizeof(struct http_query_parameter*) * 10);
     
-    char* token = strtok(parameters_string, "&");
+    char *save_ptr1;
+    char *save_ptr2;
+
+    char* token = strtok_r(parameters_string, "&",&save_ptr1);
     
     while(token != NULL){
-        char* key = strtok(token, "=");
-        char* value = strtok(NULL, "=");
+        char* key = strtok_r(token, "=", &save_ptr2);
+        char* value = strtok_r(NULL, "=", &save_ptr2);
 
         struct http_query_parameter* query_parameter = 
             insert_query_parameter(key, value);
         
         query_parameters.parameters[query_parameters.size++] = query_parameter;
-        token = strtok(NULL, "&");
+        token = strtok_r(NULL, "&", &save_ptr1);
     }
     return query_parameters;
 }
