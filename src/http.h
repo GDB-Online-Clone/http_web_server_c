@@ -41,14 +41,23 @@ int init_http_request(
 
 struct http_request parse_http_request(char *req_string);
 
+
+/**
+ * @brief Cleanup `struct http_headers` instance.
+ * 
+ * @param headers target to cleanup
+ */
+void destruct_http_headers(struct http_headers *headers);
+
 struct http_header* parse_http_header(
 	struct http_header	*http_header,
 	char				*header_string
 );
+
+struct http_headers parse_http_headers(char* headers_string);
 struct http_header* insert_header(char* key, char* value);
 
 struct http_header* find_header(char* key);
-struct http_headers parse_http_headers(char* headers_string);
 
 struct http_header* insert_qurey_parameter(char* key, char* value);
 
@@ -126,8 +135,14 @@ struct http_header {
 struct http_headers {
     /**
      * @brief size is the number of header
-     */
+     */    
     int size;
+
+    /**
+     * @brief capacity of headers array
+     */
+    int capacity;
+
     /**
      * @brief headers is the array of http_header
      */
