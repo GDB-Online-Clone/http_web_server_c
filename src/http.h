@@ -49,11 +49,29 @@ struct http_request parse_http_request(char *req_string);
  */
 void destruct_http_headers(struct http_headers *headers);
 
+/**
+ * @brief Parses the key and value from a substring of HTTP headers and returns a struct http_header*.
+ * If a non-NULL address is provided as input for http_header, 
+ * the parsed key and value are stored at the location pointed to by the address; otherwise, they are stored using **malloc**.
+ * 
+ * @param http_header Pointer to a struct http_header where key and value will be stored. If **NULL**, it will be created internally using **malloc**.
+ * @param header_string An HTTP header string to parse, separated by CRLF
+ * @return Returns the address of the variable where the header is stored if parsing is successful. Returns **NULL** if it fails.
+ * @retval 
+ * @note If you're unsure what this does, use `parse_http_headers` instead.
+ * @warning Don't pass null-terminated string.
+ */
 struct http_header* parse_http_header(
 	struct http_header	*http_header,
 	char				*header_string
 );
 
+/**
+ * @brief Parse HTTP headers string and build a `struct http_headers` instance.
+ * 
+ * @param headers_string HTTP headers as string, ended by CRLF
+ * @return Constructed `struct http_headers` instance. If `struct http_headers::capacity` is **zero**, it means parsing **failed**.
+ */
 struct http_headers parse_http_headers(char* headers_string);
 struct http_header* insert_header(char* key, char* value);
 
