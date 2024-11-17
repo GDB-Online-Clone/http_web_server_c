@@ -108,7 +108,7 @@ enum http_version {
     HTTP_2_0, // HTTP/2.0
     HTTP_3_0, // HTTP/3.0
     HTTP_VERSION_UNKNOWN // Unknown version handling
-}
+};
 
 /**
  * @brief route struct to define each route, mapped by URL path.
