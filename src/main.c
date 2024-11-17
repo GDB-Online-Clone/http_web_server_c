@@ -289,10 +289,18 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
 
     struct http_query_parameter parsed_param = parse_http_query_parameter(parameter_string);
 
+    if (!parsed_param.key || !parsed_param.value) {
+        if (parsed_param.key) free(parsed_param.key);
+        if (parsed_param.value) free(parsed_param.value);
+        return NULL;
+    }
+
     struct http_query_parameter* new_param = 
         (struct http_query_parameter*)malloc(sizeof(struct http_query_parameter));
     
-    if (!new_param) {
+    if (!new_param){
+        free(parsed_param.key);
+        free(parsed_param.value);
         return NULL;
     }
 
