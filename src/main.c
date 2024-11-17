@@ -276,6 +276,29 @@ struct http_query_parameter parse_http_query_parameter(char* parameter_string){
 /**
  * @TODO 매개변수로 struct http_query_parameters *query_parameters 받아서 해당 구조체에 새로운 파라미터 추가하도록 변경.
  */
+/**
+ * @brief Parses and inserts a query parameter into the parameters list
+ *
+ * @details This function parses the input parameter string into a key-value pair
+ *          and adds it to the parameters array in the query_parameters structure.
+ *          The structure can store up to a maximum of 10 parameters.
+ *
+ * @param query_parameters Pointer to the structure storing query parameters
+ * @param parameter_string Query parameter string to be parsed
+ *
+ * @return Pointer to the updated query_parameters structure on success,
+ *         NULL on failure
+ *
+ * @retval NULL Returned in following cases:
+ *              - If query_parameters is NULL
+ *              - If parameter_string is NULL
+ *              - If number of parameters is already 10 or more
+ *              - If parameter parsing fails
+ *              - If memory allocation fails
+ *
+ * @note Parameter parsing is performed using parse_http_query_parameter() function
+ * @warning Memory allocated within the returned structure must be freed after use
+ */
 struct http_query_parameters* insert_query_parameter(struct http_query_parameters *query_parameters, char* parameter_string){
 
     if (!query_parameters || !parameter_string) {
