@@ -48,6 +48,11 @@ struct http_request parse_http_request(char *req_string);
  */
 enum http_method parse_http_method(const char *method);
 
+/**
+ * @brief Parse the HTTP version string and return its enum representation.
+ */
+enum http_version parse_http_version(const char *version);
+
 struct http_header* parse_http_header(
 	struct http_header	*http_header,
 	char				*header_string
