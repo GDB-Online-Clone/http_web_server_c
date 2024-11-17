@@ -288,21 +288,30 @@ struct http_query_parameter parse_http_query_parameter(char* parameter_string){
  */
 struct http_query_parameter* insert_query_parameter(struct http_query_parameters *query_parameters, char* parameter_string){
 
-    
-    struct http_query_parameter parsedParam = parse_http_query_parameter(key, value);
+    if (!query_parameters || !parameter_string) {
+        return -1;
+    }
 
-    struct http_query_parameter* query_parameter = 
+    // 쿼리 파라미터가 10개 이상이면 실패
+    if (query_parameters->size >= 10){  
+        return -1;
+    }
+
+    struct http_query_parameter parsed_param = parse_http_query_parameter(parameter_string);
+
+    struct http_query_parameter* new_param = 
         (struct http_query_parameter*)malloc(sizeof(struct http_query_parameter));
     
-    if (!query_parameter) {
-        free(query_parameter);
+    if (!new_param) {
         return NULL;
     }
 
-    query_parameter->key = strdup(parsedParam.key);
-    query_parameter->value = strdup(parsedParam.value);
+    new_param->key = parsed_param.key;
+    new_param->value = parsed_param.value;
     
-    return query_parameter;
+    query_parameters->parameters[query_parameters->size++] = new_param;
+    
+    return 0;
 }
 
 
