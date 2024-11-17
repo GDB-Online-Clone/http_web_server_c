@@ -103,14 +103,56 @@ struct http_headers* insert_header(struct http_headers *headers, char* key, char
 
 struct http_header* find_header(char* key);
 
-// 쿼리 파라미터
+/**
+ * @brief Parses a single HTTP query parameter.
+ * 
+ * This function takes a key and a value as input and returns a 
+ * struct http_query_parameter containing the parsedParam key and value.
+ * 
+ * @param key The key of the query parameter.
+ * @param value The value of the query parameter.
+ * @return struct http_query_parameter The parsedParam query parameter.
+ */
 struct http_query_parameter parse_http_query_parameter(
 	char		*key,
 	char		*value
 );
+
+/**
+ * @brief Allocates memory and stores a single HTTP query parameter.
+ * 
+ * This function parses a key and value into a struct http_query_parameter,
+ * allocates memory for it, and returns a pointer to the allocated memory.
+ * 
+ * @param key The key of the query parameter.
+ * @param value The value of the query parameter.
+ * @return struct http_query_parameter* Pointer to the allocated query parameter.
+ */
 struct http_query_parameter* insert_qurey_parameter(char* key, char* value);
-struct http_query_parameter* find_query_parameter(char* key);
+
+/**
+ * @brief Parses an entire query string into multiple query parameters.
+ * 
+ * This function takes a query string, parses it into individual key-value pairs,
+ * and stores them in a struct http_query_parameters. It allocates memory for 
+ * each query parameter and returns the struct containing all parameters.
+ * 
+ * @param parameters_string The query string to be parsedParam.
+ * @return struct http_query_parameters The parsedParam query parameters.
+ */
 struct http_query_parameters parse_query_parameters(char* parameters_string);
+
+struct http_query_parameter* find_query_parameter(char* key);
+
+/**
+ * @brief Frees memory allocated for query parameters.
+ * 
+ * This function frees the memory allocated for each query parameter's key and value,
+ * as well as the memory allocated for the struct http_query_parameter itself. It also
+ * frees the memory allocated for the array of query parameters and resets the size.
+ * 
+ * @param query_parameters Pointer to the struct http_query_parameters to be freed.
+ */
 void free_query_parameters(struct http_query_parameters* query_parameters);
 
 
