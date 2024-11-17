@@ -250,15 +250,25 @@ struct http_query_parameter parse_http_query_parameter(char* parameter_string){
         return query_parameter;
     }
 
+    char* temp = strdup(parameter_string);
+    if (!temp) {
+        return query_parameter;
+    }
+
     /* '=' 구분자 처리 */
     char *save_ptr2;
 
     char* key = strtok_r(parameter_string, "=", &save_ptr2);
     char* value = strtok_r(NULL, "=", &save_ptr2);
 
-    query_parameter.key = key;
-    query_parameter.value = value;
-    
+    if (key) {
+        query_parameter.key = strdup(key);
+    }
+    if (value) {
+        query_parameter.value = strdup(value);
+    }
+
+    free(temp);
     return query_parameter;
 }
 
