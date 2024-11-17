@@ -359,7 +359,7 @@ int init_http_request(
     return 0; // 성공
 }
 
-struct http_request parse_http_request(char *request) {
+struct http_request parse_http_request(const char *request) {
     struct http_request http_request;    
     struct http_headers http_headers = {};
     struct http_query_parameters http_query_parameters = {};
