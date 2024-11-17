@@ -57,14 +57,51 @@ enum http_method parse_http_method(const char *method);
  */
 enum http_version parse_http_version(const char *version);
 
+
+/**
+ * @brief Cleanup `struct http_headers` instance.
+ * 
+ * @param headers target to cleanup
+ */
+void destruct_http_headers(struct http_headers *headers);
+
+/**
+ * @brief Parses the key and value from a substring of HTTP headers and returns a struct http_header*.
+ * If a non-NULL address is provided as input for http_header, 
+ * the parsed key and value are stored at the location pointed to by the address; otherwise, they are stored using **malloc**.
+ * 
+ * @param http_header Pointer to a struct http_header where key and value will be stored. If **NULL**, it will be created internally using **malloc**.
+ * @param header_string An HTTP header string to parse, separated by CRLF
+ * @return Returns the address of the variable where the header is stored if parsing is successful. Returns **NULL** if it fails.
+ * @retval 
+ * @note If you're unsure what this does, use `parse_http_headers` instead.
+ * @warning Don't pass null-terminated string.
+ */
 struct http_header* parse_http_header(
 	struct http_header	*http_header,
 	char				*header_string
 );
-struct http_header* insert_header(char* key, char* value);
+
+/**
+ * @brief Parse HTTP headers string and build a `struct http_headers` instance.
+ * 
+ * @param headers_string HTTP headers as string, ended by CRLF
+ * @return Constructed `struct http_headers` instance. If `struct http_headers::capacity` is **zero**, it means parsing **failed**.
+ */
+struct http_headers parse_http_headers(char* headers_string);
+
+/**
+ * @brief Insert new header into `headers`.
+ * 
+ * @param headers a `struct http_headers` where wants to store given header having 'key' and 'value'.
+ * @param key a key of new header.
+ * @param value a value of new header.
+ * @return The `struct http_headers` given as headers. In any situation, failing to store new header, return **NULL**.
+ * @note Internally, this function uses `malloc` and `strcpy` to store `key` and `value` into new header. (Actually, uses `strdup`)
+ */
+struct http_headers* insert_header(struct http_headers *headers, char* key, char* value);
 
 struct http_header* find_header(char* key);
-struct http_headers parse_http_headers(char* headers_string);
 
 // 쿼리 파라미터
 struct http_query_parameter parse_http_query_parameter(
@@ -160,8 +197,14 @@ struct http_header {
 struct http_headers {
     /**
      * @brief size is the number of header
-     */
+     */    
     int size;
+
+    /**
+     * @brief capacity of headers array
+     */
+    int capacity;
+
     /**
      * @brief headers is the array of http_header
      */
