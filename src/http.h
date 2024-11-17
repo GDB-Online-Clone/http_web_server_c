@@ -104,55 +104,111 @@ struct http_headers* insert_header(struct http_headers *headers, char* key, char
 struct http_header* find_header(char* key);
 
 /**
- * @brief Parses a single HTTP query parameter.
+ * @brief Parses a query parameter string into key-value pair
+ *
+ * @details This function takes a parameter string in the format "key=value" and splits it
+ *          into separate key and value components. The function creates copies of both
+ *          the key and value strings using strdup().
+ *
+ * @param parameter_string String containing the parameter in "key=value" format
+ *
+ * @return http_query_parameter structure containing:
+ *         - key: Pointer to allocated string containing the parameter key
+ *         - value: Pointer to allocated string containing the parameter value
+ *
+ * @retval Returns structure with NULL pointers if:
+ *         - parameter_string is NULL
+ *         - Memory allocation fails
+ *         - No '=' separator is found
+ *
+ * @note 
+ * - Uses strtok_r() for thread-safe string tokenization
+ * - Creates new memory allocations for both key and value
+ *
+ * @warning
+ * - Caller is responsible for freeing the memory of both key and value
+ * - Assumes parameter_string format is "key=value"
  * 
- * This function takes a key and a value as input and returns a 
- * struct http_query_parameter containing the parsedParam key and value.
- * 
- * @param key The key of the query parameter.
- * @param value The value of the query parameter.
- * @return struct http_query_parameter The parsedParam query parameter.
+ * @example
+ * Input: "name=john"
+ * Output: {key: "name", value: "john"}
  */
 struct http_query_parameter parse_http_query_parameter(
-	char		*key,
-	char		*value
+	char		*parameter_string
 );
 
 /**
- * @brief Allocates memory and stores a single HTTP query parameter.
- * 
- * This function parses a key and value into a struct http_query_parameter,
- * allocates memory for it, and returns a pointer to the allocated memory.
- * 
- * @param key The key of the query parameter.
- * @param value The value of the query parameter.
- * @return struct http_query_parameter* Pointer to the allocated query parameter.
+ * @brief Parses and inserts a query parameter into the parameters list
+ *
+ * @details This function parses the input parameter string into a key-value pair
+ *          and adds it to the parameters array in the query_parameters structure.
+ *          The structure can store up to a maximum of 10 parameters.
+ *
+ * @param query_parameters Pointer to the structure storing query parameters
+ * @param parameter_string Query parameter string to be parsed
+ *
+ * @return Pointer to the updated query_parameters structure on success,
+ *         NULL on failure
+ *
+ * @retval NULL Returned in following cases:
+ *              - If query_parameters is NULL
+ *              - If parameter_string is NULL
+ *              - If number of parameters is already 10 or more
+ *              - If parameter parsing fails
+ *              - If memory allocation fails
+ *
+ * @note Parameter parsing is performed using parse_http_query_parameter() function
+ * @warning Memory allocated within the returned structure must be freed after use
  */
-struct http_query_parameter* insert_qurey_parameter(char* key, char* value);
+struct http_query_parameter* insert_qurey_parameter(struct http_query_parameters *query_parameters, char* parameter_string);
 
 /**
- * @brief Parses an entire query string into multiple query parameters.
+ * @brief Parse the query parameters string and return a struct http_query_parameters.
  * 
- * This function takes a query string, parses it into individual key-value pairs,
- * and stores them in a struct http_query_parameters. It allocates memory for 
- * each query parameter and returns the struct containing all parameters.
+ * This function parses the query parameters string and returns a struct http_query_parameters
+ * containing an array of struct http_query_parameter. The query parameters string should be
+ * in the format "key1=value1&key2=value2&key3=value3".
  * 
- * @param parameters_string The query string to be parsedParam.
- * @return struct http_query_parameters The parsedParam query parameters.
+ * @param parameters_string The query parameters string to be parsed.
+ * @return struct http_query_parameters The parsed query parameters.
  */
 struct http_query_parameters parse_query_parameters(char* parameters_string);
 
 struct http_query_parameter* find_query_parameter(char* key);
 
 /**
- * @brief Frees memory allocated for query parameters.
- * 
- * This function frees the memory allocated for each query parameter's key and value,
- * as well as the memory allocated for the struct http_query_parameter itself. It also
- * frees the memory allocated for the array of query parameters and resets the size.
- * 
- * @param query_parameters Pointer to the struct http_query_parameters to be freed.
- */
+* @brief Deallocates all memory associated with query parameters
+*
+* @details This function performs a complete cleanup of the query_parameters structure:
+*          - Frees memory for each parameter's key and value strings
+*          - Frees memory for each parameter structure
+*          - Frees the parameters array
+*          - Resets size to 0
+*          The function handles NULL pointers safely at each level.
+*
+* @param query_parameters Pointer to the query_parameters structure to be freed
+*
+* @note
+* - Safely handles NULL pointers at all levels of the structure
+* - Sets the parameters pointer to NULL after freeing
+* - Resets the size counter to 0
+* - Does not free the query_parameters structure itself
+*
+* @warning
+* - The query_parameters structure itself is not freed by this function
+* - After this function call, query_parameters->parameters will be NULL
+* - Assumes that query_parameters->size accurately reflects the number of allocated parameters
+*
+* Memory deallocation order:
+* 1. Individual key and value strings within each parameter
+* 2. Parameter structures
+* 3. Parameters array
+*
+* @example
+* struct http_query_parameters* params = ...;
+* free_query_parameters(params);
+* // At this point: params->parameters == NULL and params->size == 0
+*/
 void free_query_parameters(struct http_query_parameters* query_parameters);
 
 
