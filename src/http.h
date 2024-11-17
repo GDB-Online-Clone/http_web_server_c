@@ -73,7 +73,17 @@ struct http_header* parse_http_header(
  * @return Constructed `struct http_headers` instance. If `struct http_headers::capacity` is **zero**, it means parsing **failed**.
  */
 struct http_headers parse_http_headers(char* headers_string);
-struct http_header* insert_header(char* key, char* value);
+
+/**
+ * @brief Insert new header into `headers`.
+ * 
+ * @param headers a `struct http_headers` where wants to store given header having 'key' and 'value'.
+ * @param key a key of new header.
+ * @param value a value of new header.
+ * @return The `struct http_headers` given as headers. In any situation, failing to store new header, return **NULL**.
+ * @note Internally, this function uses `malloc` and `strcpy` to store `key` and `value` into new header. (Actually, uses `strdup`)
+ */
+struct http_headers* insert_header(struct http_headers *headers, char* key, char* value);
 
 struct http_header* find_header(char* key);
 

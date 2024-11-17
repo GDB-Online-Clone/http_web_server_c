@@ -1,7 +1,40 @@
 #include "http.h"
 #include "utility.h"
 
-struct http_header* insert_header(char *key, char *value);
+struct http_headers* insert_header(struct http_headers *headers, char *key, char *value) {
+    if (headers->capacity == headers->size) {
+        int new_capacity = headers->capacity * 2;
+
+        struct http_header** new_headers = realloc(headers->headers, new_capacity * sizeof(struct http_header*));
+
+        headers->headers = new_headers;
+        headers->capacity = new_capacity;            
+    }
+
+    struct http_header *header = (struct http_header *)malloc(sizeof(struct http_header));
+    if (header == NULL)
+        return NULL;
+
+    char *new_key = strdup(key);
+    char *new_value = strdup(value);
+
+    if (!new_key || !new_value) {
+        if (!new_key)
+            free(new_key);
+        if (!new_value)
+            free(new_value);
+        free(header);
+        return NULL;
+    }
+
+    *header = (struct http_header) {
+        .key = new_key,
+        .value = new_value
+    };
+    headers->headers[headers->size++] = header;
+    
+    return headers;
+}
 
 
 void destruct_http_headers(struct http_headers *headers) {
