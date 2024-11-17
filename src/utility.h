@@ -1,7 +1,25 @@
 #pragma once
 
 #include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
 
+#ifdef DEBUG
+/**
+ * @brief Verbose debug logger. A wrapper function of `printf`, executed only when `DEBUG` macro is defined.
+ * i.g. [main:520] ~~ debugging log ~~
+ * 
+ */
+#define DLOGV(fmt, args...) do { printf("[%s:%d] ", __func__, __LINE__); printf(fmt, ## args); } while(0)
+/**
+ * @brief Brief debug logger. A wrapper function of `printf`, executed only when `DEBUG` macro is defined.
+ * 
+ */
+#define DLOG(fmt, args...) printf(fmt, ## args)
+#else
+#define DLOGV(fmt, args...) /* Don't do anything in release builds */
+#define DLOG(fmt, args...) /* Don't do anything in release builds */
+#endif
 
 /**
  * @brief Check input is white-space.
