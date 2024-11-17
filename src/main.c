@@ -253,7 +253,6 @@ struct http_query_parameter parse_http_query_parameter(char *key, char *value) {
 }
 
 struct http_query_parameter* insert_query_parameter(char* key, char* value) {
-
     struct http_query_parameter parsedParam = parse_http_query_parameter(key, value);
 
     struct http_query_parameter* query_parameter = 
@@ -415,6 +414,14 @@ struct http_request parse_http_request(char *request) {
             header = strdup(header_start);
         }
     }
+
+    http_headers = header != NULL
+        ? parse_http_headers(header)
+        : http_headers;
+
+    http_query_parameters = query != NULL
+        ? parse_query_parameters(query)
+        : http_query_parameters;
 
     // Http Request 초기화
     init_http_request(
