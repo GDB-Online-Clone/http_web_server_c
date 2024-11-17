@@ -240,7 +240,7 @@ struct http_headers parse_http_headers(char *headers_string) {
 
 struct http_query_parameter parse_http_query_parameter(char* parameter_string){
 
-    struct http_query_parameter query_parameter;
+    struct http_query_parameter query_parameter = {};
     
     if (!parameter_string) {
         return query_parameter;
