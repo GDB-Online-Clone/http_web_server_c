@@ -21,6 +21,7 @@
 
 enum http_status_code;
 enum http_method;
+enum http_version; 
 
 // GET /index.html HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n
 
@@ -31,15 +32,30 @@ struct http_query_parameters;
 struct http_request;
 struct http_response;
 
-int init_http_request(	
-	struct http_response	*http_response,
-	struct http_headers		headers,
-	enum http_status_code   status_code,
-	char					*body,
-	int					    client_socket
+int init_http_request(
+    struct http_request             *request,
+    struct http_headers             headers,
+    enum http_method                method,
+    enum http_version               version,
+    char                            *body,
+    char                            *path,
+    struct http_query_parameters    query_parameters
 );
 
-struct http_request parse_http_request(char *req_string);
+/**
+ * @brief Parse an HTTP request string into a struct http_request.
+ */
+struct http_request parse_http_request(char *request);
+
+/**
+ * @brief Parse the HTTP method string and return its enum representation.
+ */
+enum http_method parse_http_method(const char *method);
+
+/**
+ * @brief Parse the HTTP version string and return its enum representation.
+ */
+enum http_version parse_http_version(const char *version);
 
 struct http_header* parse_http_header(
 	struct http_header	*http_header,
@@ -84,7 +100,20 @@ enum http_status_code {
  */
 enum http_method {
     HTTP_GET,
-    HTTP_POST
+    HTTP_POST,
+    HTTP_METHOD_UNKNOWN, // Unknown method handling
+};
+
+/**
+ * @brief http version
+ * @note enum value has `int` type
+ */
+enum http_version {
+    HTTP_1_0, // HTTP/1.0
+    HTTP_1_1, // HTTP/1.1
+    HTTP_2_0, // HTTP/2.0
+    HTTP_3_0, // HTTP/3.0
+    HTTP_VERSION_UNKNOWN // Unknown version handling
 };
 
 /**
@@ -179,6 +208,14 @@ struct http_request {
      */
     struct http_headers headers;
     /**
+     * @brief http request method, such as GET, POST.
+     */
+    enum http_method method;
+    /**
+     * @brief http version.
+     */
+    enum http_version version;
+    /**
      * @brief content body of http request. If content body is empty, body is NULL.
      */
     char *body;
@@ -190,10 +227,6 @@ struct http_request {
      * @brief query_parameters in URL
      */
     struct http_query_parameters query_parameters;
-    /**
-     * @brief client_socket returned by "accept(2)"
-     */
-    int client_socket;
 };
 
 /**
