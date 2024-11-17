@@ -242,6 +242,36 @@ struct http_headers parse_http_headers(char *headers_string) {
  * @TODO parse_http_query_parameter 함수 이름에 맞게 로직 수정
  * @TODO char *key, char *value 매개 변수 -> 문자열 하나만 받도록 수정
  */
+/**
+ * @brief Parses a query parameter string into key-value pair
+ *
+ * @details This function takes a parameter string in the format "key=value" and splits it
+ *          into separate key and value components. The function creates copies of both
+ *          the key and value strings using strdup().
+ *
+ * @param parameter_string String containing the parameter in "key=value" format
+ *
+ * @return http_query_parameter structure containing:
+ *         - key: Pointer to allocated string containing the parameter key
+ *         - value: Pointer to allocated string containing the parameter value
+ *
+ * @retval Returns structure with NULL pointers if:
+ *         - parameter_string is NULL
+ *         - Memory allocation fails
+ *         - No '=' separator is found
+ *
+ * @note 
+ * - Uses strtok_r() for thread-safe string tokenization
+ * - Creates new memory allocations for both key and value
+ *
+ * @warning
+ * - Caller is responsible for freeing the memory of both key and value
+ * - Assumes parameter_string format is "key=value"
+ * 
+ * @example
+ * Input: "name=john"
+ * Output: {key: "name", value: "john"}
+ */
 struct http_query_parameter parse_http_query_parameter(char* parameter_string){
 
     struct http_query_parameter query_parameter;
