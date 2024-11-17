@@ -238,17 +238,6 @@ struct http_headers parse_http_headers(char *headers_string) {
 }
 
 
-
-/**
- * @brief Parses a single HTTP query parameter.
- * 
- * This function takes a key and a value as input and returns a 
- * struct http_query_parameter containing the parsedParam key and value.
- * 
- * @param key The key of the query parameter.
- * @param value The value of the query parameter.
- * @return struct http_query_parameter The parsedParam query parameter.
- */
 /*
  * @TODO parse_http_query_parameter 함수 이름에 맞게 로직 수정
  * @TODO char *key, char *value 매개 변수 -> 문자열 하나만 받도록 수정
@@ -273,28 +262,19 @@ struct http_query_parameter parse_http_query_parameter(char* parameter_string){
     return query_parameter;
 }
 
-/**
- * @brief Allocates memory and stores a single HTTP query parameter.
- * 
- * This function parses a key and value into a struct http_query_parameter,
- * allocates memory for it, and returns a pointer to the allocated memory.
- * 
- * @param key The key of the query parameter.
- * @param value The value of the query parameter.
- * @return struct http_query_parameter* Pointer to the allocated query parameter.
- */
+
 /**
  * @TODO 매개변수로 struct http_query_parameters *query_parameters 받아서 해당 구조체에 새로운 파라미터 추가하도록 변경.
  */
-struct http_query_parameter* insert_query_parameter(struct http_query_parameters *query_parameters, char* parameter_string){
+struct http_query_parameters* insert_query_parameter(struct http_query_parameters *query_parameters, char* parameter_string){
 
     if (!query_parameters || !parameter_string) {
-        return -1;
+        return NULL;
     }
 
     // 쿼리 파라미터가 10개 이상이면 실패
     if (query_parameters->size >= 10){  
-        return -1;
+        return NULL;
     }
 
     struct http_query_parameter parsed_param = parse_http_query_parameter(parameter_string);
@@ -311,20 +291,11 @@ struct http_query_parameter* insert_query_parameter(struct http_query_parameters
     
     query_parameters->parameters[query_parameters->size++] = new_param;
     
-    return 0;
+    return query_parameters;
 }
 
 
-/**
- * @brief Parses an entire query string into multiple query parameters.
- * 
- * This function takes a query string, parses it into individual key-value pairs,
- * and stores them in a struct http_query_parameters. It allocates memory for 
- * each query parameter and returns the struct containing all parameters.
- * 
- * @param parameters_string The query string to be parsedParam.
- * @return struct http_query_parameters The parsedParam query parameters.
- */
+
 /**
  * @TODO parse_query_parameters "=" 로 문자열 나누는 부분 로직을 parse_http_query_parameter로 이동
  */
@@ -336,19 +307,18 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
         (struct http_query_parameter**)malloc(sizeof(struct http_query_parameter*) * 10);
     
     /* '&' 구분자 처리 */
-    char *save_ptr1;
+    char *save_ptr;
 
-    char* token = strtok_r(parameters_string, "&",&save_ptr1);
+    char* token = strtok_r(parameters_string, "&",&save_ptr);
     
     while(token != NULL){
         
-        struct http_query_parameter parsed_param = parse_http_query_parameter(token);
-
-        struct http_query_parameter* query_parameter = 
-            insert_query_parameter(parsed_param, key, value);
-        
-        query_parameters.parameters[query_parameters.size++] = query_parameter;
-        token = strtok_r(NULL, "&", &save_ptr1);
+        if (insert_query_parameter(&query_parameters, token) != NULL){
+            // 오류 발생 시 이미 할당된 메모리 정리
+            free_query_parameters(&query_parameters);
+            return (struct http_query_parameters){0};
+        }
+        token = strtok_r(NULL, "&", &save_ptr);
     }
     return query_parameters;
 }
