@@ -351,11 +351,12 @@ void free_query_parameters(struct http_query_parameters* query_parameters) {
         for (int i = 0; i < query_parameters->size; i++){
             if (query_parameters->parameters[i]) {
 
-                // key와 value 메모리 해제
-                free(query_parameters->parameters[i]->key);
-                free(query_parameters->parameters[i]->value);
-                
-                // parameter 구조체 자체 해제
+                if (query_parameters->parameters[i]->key) {
+                    free(query_parameters->parameters[i]->key);
+                }
+                if (query_parameters->parameters[i]->value) {
+                    free(query_parameters->parameters[i]->value);
+                }
                 free(query_parameters->parameters[i]);
             }
         }
