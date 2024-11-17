@@ -317,6 +317,16 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
 /**
  * @TODO parse_query_parameters "=" 로 문자열 나누는 부분 로직을 parse_http_query_parameter로 이동
  */
+/**
+ * @brief Parse the query parameters string and return a struct http_query_parameters.
+ * 
+ * This function parses the query parameters string and returns a struct http_query_parameters
+ * containing an array of struct http_query_parameter. The query parameters string should be
+ * in the format "key1=value1&key2=value2&key3=value3".
+ * 
+ * @param parameters_string The query parameters string to be parsed.
+ * @return struct http_query_parameters The parsed query parameters.
+ */
 struct http_query_parameters parse_query_parameters(char* parameters_string){
     
     struct http_query_parameters query_parameters;
