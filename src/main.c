@@ -413,7 +413,7 @@ struct http_request parse_http_request(const char *request) {
     char *version = strtok(NULL, " ");
 
     enum http_method parsed_method = parse_http_method(method);
-    enum http_version parsed_version = parse_http_version(method);
+    enum http_version parsed_version = parse_http_version(version);
 
     // 경로와 쿼리 파라미터 분리
     char *query = NULL;
