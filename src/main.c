@@ -41,8 +41,8 @@ struct http_query_parameter* insert_query_parameter(char* key, char* value){
         return NULL;
     }
 
-    query_parameter->key = parsedParam.key;
-    query_parameter->value = parsedParam.value;
+    query_parameter->key = strdup(parsedParam.key);
+    query_parameter->value = strdup(parsedParam.value);
     
     return query_parameter;
 }
