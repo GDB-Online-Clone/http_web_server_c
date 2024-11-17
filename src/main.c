@@ -440,7 +440,7 @@ struct http_request parse_http_request(const char *request) {
         char *body_start = strstr(header_start, "\r\n\r\n");
         
         if (body_start) {
-            size_t header_len = body_start - header_start;
+            size_t header_len = body_start - header_start + 2;
             header = malloc(header_len + 1);
 
             if (header) {
