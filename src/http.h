@@ -41,6 +41,9 @@ int init_http_request(
     struct http_query_parameters    query_parameters;
 );
 
+/**
+ * @brief Parse an HTTP request string into a struct http_request.
+ */
 struct http_request parse_http_request(char *req_string);
 
 /**
