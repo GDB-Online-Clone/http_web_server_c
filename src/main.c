@@ -311,7 +311,6 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
 struct http_query_parameters parse_query_parameters(char* parameters_string){
     char *parameters = strdup(parameters_string);
 
-    
     struct http_query_parameters query_parameters;
     query_parameters.size = 0;
     query_parameters.parameters = 
@@ -324,7 +323,7 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
     
     while(token != NULL){
         
-        if (insert_query_parameter(&query_parameters, token) == NULL){
+        if (insert_query_parameter(&query_parameters, token) != NULL){
             // 오류 발생 시 이미 할당된 메모리 정리
             free_query_parameters(&query_parameters);
             return (struct http_query_parameters){0};
@@ -439,7 +438,7 @@ struct http_request parse_http_request(const char *request) {
     if (header_start) {
         header_start += 2; // "\r\n" 건너뛰기
         char *body_start = strstr(header_start, "\r\n\r\n");
-
+        
         if (body_start) {
             size_t header_len = body_start - header_start;
             header = malloc(header_len + 1);
@@ -452,7 +451,6 @@ struct http_request parse_http_request(const char *request) {
             body_start += 4;
             body = strdup(body_start); // 내용 복사
         } else {
-    
             header = strdup(header_start);
         }
     }
@@ -461,15 +459,23 @@ struct http_request parse_http_request(const char *request) {
         ? parse_http_headers(header)
         : http_headers;
 
+    DLOG("In request parser\n");
+    for (int i = 0; i < http_headers.size; i++) {
+        DLOG("%s: %s\n", http_headers.headers[i]->key, http_headers.headers[i]->value);        
+    }
+
     http_query_parameters = query != NULL
         ? parse_query_parameters(query)
         : http_query_parameters;
 
-
-    printf("In request query_parser\n");
-    for (int i = 0; i < http_query_parameters.size; i++) {
-        printf("%s: %s\n", http_query_parameters.parameters[i]->key, http_query_parameters.parameters[i]->value);        
-    }
+    DLOG("DEBUG INFO:\n");
+    DLOG("Parsed Method: %d\n", parsed_method);
+    DLOG("Parsed Version: %d\n", parsed_version);
+    DLOG("Path String: %s\n", path ? path : "(null)");
+    DLOG("Query String: %s\n", query ? query : "(null)");
+    DLOG("Header String: %s\n", header ? header : "(null)");
+    DLOG("Body String: %s\n", body ? body : "(null)");
+     DLOG("\n");
 
     // Http Request 초기화
     init_http_request(
@@ -498,30 +504,29 @@ struct http_request parse_http_request(const char *request) {
  * @return int 프로그램 종료 상태
  */
 int main() {
-    // HTTP 요청 파싱
-    const char *http_request =
+      // HTTP 요청 파싱
+    char *http_request =
         "GET /search?q=example&lang=en HTTP/1.1\r\n"
         "Host: www.example.com\r\n"
         "User-Agent: TestClient/1.0\r\n"
         "Accept: text/html\r\n"
-        "\r\n";
-    
+        "\r\n";    
 
     struct http_request request = parse_http_request(http_request);
     
     
-    printf("[headers]\n");
+    DLOG("[headers]\n");
     for (int i = 0; i < request.headers.size; i++) {
-        printf("%s: %s\n", request.headers.headers[i]->key, request.headers.headers[i]->value);        
+        DLOG("%s: %s\n", request.headers.headers[i]->key, request.headers.headers[i]->value);        
     }
-    printf("[method]\n%d\n", request.method);
-    printf("[version]\n%d\n", request.version);
-    printf("[body]\n%s\n", request.body);
-    printf("[path]\n%s\n", request.path);
+    DLOG("[method]\n%d\n", request.method);
+    DLOG("[version]\n%d\n", request.version);
+    DLOG("[body]\n%s\n", request.body);
+    DLOG("[path]\n%s\n", request.path);
 
-    printf("[query parameters]\n");
+     DLOG("[query parameters]\n");
     for (int i = 0; i < request.query_parameters.size; i++) {
-        printf("%s: %s\n", request.query_parameters.parameters[i]->key, request.query_parameters.parameters[i]->value);        
+        DLOG("%s: %s\n", request.query_parameters.parameters[i]->key, request.query_parameters.parameters[i]->value);        
     }
     return 0;
 }
