@@ -33,11 +33,12 @@ struct http_request;
 struct http_response;
 
 int init_http_request(	
-	struct http_response	*http_response,
-	struct http_headers		headers,
-	enum http_status_code   status_code,
-	char					*body,
-	int					    client_socket
+	struct http_headers		        headers,
+    enum http_method                method,
+    enum http_version               version,
+    char					        *body
+    char                            *path,
+    struct http_query_parameters    query_parameters;
 );
 
 struct http_request parse_http_request(char *req_string);
@@ -188,6 +189,14 @@ struct http_request {
      */
     struct http_headers headers;
     /**
+     * @brief http request method, such as GET, POST.
+     */
+    enum http_method method;
+    /**
+     * @brief http version.
+     */
+    enum http_version version;
+    /**
      * @brief content body of http request. If content body is empty, body is NULL.
      */
     char *body;
@@ -199,10 +208,6 @@ struct http_request {
      * @brief query_parameters in URL
      */
     struct http_query_parameters query_parameters;
-    /**
-     * @brief client_socket returned by "accept(2)"
-     */
-    int client_socket;
 };
 
 /**
