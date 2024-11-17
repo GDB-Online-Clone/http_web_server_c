@@ -43,6 +43,11 @@ int init_http_request(
 
 struct http_request parse_http_request(char *req_string);
 
+/**
+ * @brief Parse the HTTP method string and return its enum representation.
+ */
+enum http_method parse_http_method(const char *method);
+
 struct http_header* parse_http_header(
 	struct http_header	*http_header,
 	char				*header_string
