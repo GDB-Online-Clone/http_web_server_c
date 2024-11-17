@@ -309,7 +309,8 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
 
 
 struct http_query_parameters parse_query_parameters(char* parameters_string){
-    
+    char *parameters = strdup(parameters_string);
+
     struct http_query_parameters query_parameters;
     query_parameters.size = 0;
     query_parameters.parameters = 
@@ -318,7 +319,7 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
     /* '&' 구분자 처리 */
     char *save_ptr;
 
-    char* token = strtok_r(parameters_string, "&",&save_ptr);
+    char* token = strtok_r(parameters, "&",&save_ptr);
     
     while(token != NULL){
         
@@ -329,6 +330,8 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
         }
         token = strtok_r(NULL, "&", &save_ptr);
     }
+
+    free(parameters);
     return query_parameters;
 }
 
