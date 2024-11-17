@@ -23,8 +23,6 @@ enum http_status_code;
 enum http_method;
 enum http_version; 
 
-// GET /index.html HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n
-
 struct route;
 struct http_header;
 struct http_headers;
