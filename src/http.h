@@ -33,12 +33,12 @@ struct http_request;
 struct http_response;
 
 int init_http_request(	
-	struct http_headers		        headers,
+	  struct http_headers		    headers,
     enum http_method                method,
     enum http_version               version,
-    char					        *body
+    char					        *body,
     char                            *path,
-    struct http_query_parameters    query_parameters;
+    struct http_query_parameters    query_parameters
 );
 
 /**
