@@ -20,6 +20,30 @@ enum http_version parse_http_version(const char *version) {
     return HTTP_VERSION_UNKNOWN;
 }
 
+int init_http_request(
+    struct http_request             *request,
+    struct http_headers             headers,
+    enum http_method                method,
+    enum http_version               version,
+    char                            *body,
+    char                            *path,
+    struct http_query_parameters    query_parameters
+) {
+    // 요청 구조체가 NULL이면 실패
+    if (request == NULL) {
+        return -1;
+    }
+
+    request->headers = headers;
+    request->method = method;
+    request->version = version;
+    request->body = body ? strdup(body) : NULL;
+    request->path = path ? strdup(path) : NULL;
+    request->query_parameters = query_parameters;
+
+    return 0; // 성공
+}
+
 /**
  * @brief Build Test 용
  */
