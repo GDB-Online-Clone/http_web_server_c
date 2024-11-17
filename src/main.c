@@ -404,6 +404,39 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
     return query_parameters;
 }
 
+/**
+* @brief Deallocates all memory associated with query parameters
+*
+* @details This function performs a complete cleanup of the query_parameters structure:
+*          - Frees memory for each parameter's key and value strings
+*          - Frees memory for each parameter structure
+*          - Frees the parameters array
+*          - Resets size to 0
+*          The function handles NULL pointers safely at each level.
+*
+* @param query_parameters Pointer to the query_parameters structure to be freed
+*
+* @note
+* - Safely handles NULL pointers at all levels of the structure
+* - Sets the parameters pointer to NULL after freeing
+* - Resets the size counter to 0
+* - Does not free the query_parameters structure itself
+*
+* @warning
+* - The query_parameters structure itself is not freed by this function
+* - After this function call, query_parameters->parameters will be NULL
+* - Assumes that query_parameters->size accurately reflects the number of allocated parameters
+*
+* Memory deallocation order:
+* 1. Individual key and value strings within each parameter
+* 2. Parameter structures
+* 3. Parameters array
+*
+* @example
+* struct http_query_parameters* params = ...;
+* free_query_parameters(params);
+* // At this point: params->parameters == NULL and params->size == 0
+*/
 void free_query_parameters(struct http_query_parameters* query_parameters) {
     
     if (!query_parameters) {
