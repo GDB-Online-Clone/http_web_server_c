@@ -2,7 +2,7 @@ CFLAGS = -Wall -g -std=c2x
 LDFLAGS = -I. -L. -lpthread
 
 bin = prog
-shared = webserver.so
+shared = libwebserver.so
 
 SRC_DIR = ./src
 OUT_DIR = ./out
