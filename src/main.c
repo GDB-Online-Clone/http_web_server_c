@@ -48,19 +48,14 @@ void destruct_http_headers(struct http_headers *headers) {
     headers->size = 0;
 }
 
-struct http_header *parse_http_header(struct http_header *http_header, char *header_string) {
+struct http_header *parse_http_header(char *header_string) {
 
     char *end_of_header = strstr(header_string, "\r\n");
     int offset = 0;
-    struct http_header *header;
+    struct http_header *header = (struct http_header*)malloc(sizeof(struct http_header));
     char *start_of_key;
     char *start_of_value;
 
-    if (!http_header) {
-        header = (struct http_header*)malloc(sizeof(struct http_header));
-    } else {
-        header = http_header;
-    }
     header->key = NULL;
     header->value = NULL;
 
@@ -183,14 +178,14 @@ struct http_header *parse_http_header(struct http_header *http_header, char *hea
  
     return header;
 
-    parse_header_error:
-        if (header->key)
-            free(header->key);
+parse_header_error:
+    if (header->key)
+        free(header->key);
+    if (header->value)
+        free(header->value);
+    free(header);
 
-        if (http_header == NULL) {
-            free(header);
-        }
-        return NULL;
+    return NULL;
 }
 
 struct http_headers parse_http_headers(char *headers_string) {    
@@ -216,7 +211,7 @@ struct http_headers parse_http_headers(char *headers_string) {
         }
         
 
-        struct http_header *parsed_header = parse_http_header(NULL, headers_string + offset);
+        struct http_header *parsed_header = parse_http_header(headers_string + offset);
         
 
         if (parsed_header == NULL) { /* parse failed */
