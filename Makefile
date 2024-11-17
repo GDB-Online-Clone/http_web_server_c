@@ -1,7 +1,7 @@
-CFLAGS = -Wall -g -std=c2x
+CFLAGS = -Wall -std=c2x -g -DDEBUG
 LDFLAGS = -I. -L. -lpthread
 
-bin = prog
+bin = prog # exists only for debugging
 shared = libwebserver.so
 
 SRC_DIR = ./src
