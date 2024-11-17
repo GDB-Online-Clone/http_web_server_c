@@ -10,6 +10,17 @@ enum http_method parse_http_method(const char *method) {
 }
 
 /**
+ * @brief Parse the HTTP version string and return its enum representation.
+ */
+enum http_version parse_http_version(const char *version) {
+    if (strcmp(version, "HTTP/1.0") == 0) return HTTP_1_0;
+    if (strcmp(version, "HTTP/1.1") == 0) return HTTP_1_1;
+    if (strcmp(version, "HTTP/2.0") == 0) return HTTP_2_0;
+    if (strcmp(version, "HTTP/3.0") == 0) return HTTP_3_0;
+    return HTTP_VERSION_UNKNOWN;
+}
+
+/**
  * @brief Build Test 용
  */
 int main() {
