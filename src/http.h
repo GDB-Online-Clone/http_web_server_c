@@ -66,21 +66,14 @@ enum http_version parse_http_version(const char *version);
 void destruct_http_headers(struct http_headers *headers);
 
 /**
- * @brief Parses the key and value from a substring of HTTP headers and returns a struct http_header*.
- * If a non-NULL address is provided as input for http_header, 
- * the parsed key and value are stored at the location pointed to by the address; otherwise, they are stored using **malloc**.
+ * @brief Parses the key and value from a substring of HTTP headers and returns a struct http_header*, allocated with malloc.
  * 
- * @param http_header Pointer to a struct http_header where key and value will be stored. If **NULL**, it will be created internally using **malloc**.
  * @param header_string An HTTP header string to parse, separated by CRLF
  * @return Returns the address of the variable where the header is stored if parsing is successful. Returns **NULL** if it fails.
- * @retval 
  * @note If you're unsure what this does, use `parse_http_headers` instead.
  * @warning Don't pass null-terminated string.
  */
-struct http_header* parse_http_header(
-	struct http_header	*http_header,
-	char				*header_string
-);
+struct http_header* parse_http_header(char *header_string);
 
 /**
  * @brief Parse HTTP headers string and build a `struct http_headers` instance.
