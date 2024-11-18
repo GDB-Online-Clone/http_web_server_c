@@ -9,10 +9,11 @@ OUT_DIR = ./out
 
 SRCS = $(notdir $(wildcard $(SRC_DIR)/*.c))
 OBJS = $(SRCS:.c=.o)
+OUT_OBJS = $(wildcard $(OUT_DIR)/*.o)
 
-all: $(OUT_DIR) $(shared) arrange
+all: $(shared) arrange
 
-binary: $(OUT_DIR) $(bin) arrange
+binary: all $(bin)
 
 $(OUT_DIR):
 	mkdir -p $@
@@ -20,18 +21,18 @@ $(OUT_DIR):
 	mkdir -p $@/include
 	mkdir -p $@/include/webserver
 
-arrange:
+arrange: $(shared)
 	mv *.o *.d $(OUT_DIR)
 
-%.o: $(SRC_DIR)/%.c
+%.o: $(SRC_DIR)/%.c $(OUT_DIR) 
 	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
 
 $(shared): $(OBJS)
 	$(CC) -shared $(CFLAGS) -o $(OUT_DIR)/libs/$@ $(OBJS) $(LDFLAGS)
-	cp $(SRC_DIR)/*.h $(OUT_DIR)/include/webserver
+	cp $(SRC_DIR)/*.h $(OUT_DIR)/include/webserver	
 
-$(bin): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDFLAGS)
+$(bin): arrange
+	$(CC) $(CFLAGS) $(OUT_OBJS) -o $@ $(LDFLAGS)
 
 
 
