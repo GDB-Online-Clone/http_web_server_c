@@ -119,10 +119,6 @@ struct http_header* find_header(char* key);
  * @warning
  * - Caller is responsible for freeing the memory of both key and value
  * - Assumes parameter_string format is "key=value"
- * 
- * @example
- * Input: "name=john"
- * Output: {key: "name", value: "john"}
  */
 struct http_query_parameter parse_http_query_parameter(
 	char		*parameter_string
@@ -194,11 +190,6 @@ struct http_query_parameter* find_query_parameter(char* key);
 * 1. Individual key and value strings within each parameter
 * 2. Parameter structures
 * 3. Parameters array
-*
-* @example
-* struct http_query_parameters* params = ...;
-* free_query_parameters(params);
-* // At this point: params->parameters == NULL and params->size == 0
 */
 void free_query_parameters(struct http_query_parameters* query_parameters);
 
@@ -303,7 +294,6 @@ struct http_headers {
 /**
  * @brief http_query_parameter
  * @note key-value pair
- * 
  */
 struct http_query_parameter {
     /**
