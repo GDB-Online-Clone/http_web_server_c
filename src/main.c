@@ -246,25 +246,34 @@ struct http_query_parameter parse_http_query_parameter(char* parameter_string){
         return query_parameter;
     }
 
-    char* temp = strdup(parameter_string);
-    if (!temp) {
+    char* param_copy = strdup(parameter_string);
+    if (!param_copy) {
         return query_parameter;
     }
 
     /* '=' 구분자 처리 */
     char *save_ptr2;
 
-    char* key = strtok_r(parameter_string, "=", &save_ptr2);
+    char* key = strtok_r(param_copy, "=", &save_ptr2);
     char* value = strtok_r(NULL, "=", &save_ptr2);
 
     if (key) {
         query_parameter.key = strdup(key);
+        if (!query_parameter.key) {
+            free(param_copy);
+            return query_parameter; // 메모리 할당 실패
+        }
     }
     if (value) {
         query_parameter.value = strdup(value);
+        if (!query_parameter.value) {
+            free(query_parameter.key);
+            free(param_copy);
+            return query_parameter; // 메모리 할당 실패
+        }
     }
 
-    free(temp);
+    free(param_copy);
     return query_parameter;
 }
 
