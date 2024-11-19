@@ -323,7 +323,7 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
     
     while(token != NULL){
         
-        if (insert_query_parameter(&query_parameters, token) != NULL){
+        if (insert_query_parameter(&query_parameters, token) == NULL){
             // 오류 발생 시 이미 할당된 메모리 정리
             free_query_parameters(&query_parameters);
             return (struct http_query_parameters){0};
