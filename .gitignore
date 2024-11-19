@@ -3,6 +3,8 @@
 *.d
 prog
 
+out/*
+
 # VSCode specific
 .vscode/*
 !.vscode/settings.json
