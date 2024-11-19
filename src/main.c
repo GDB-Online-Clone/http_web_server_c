@@ -246,25 +246,34 @@ struct http_query_parameter parse_http_query_parameter(char* parameter_string){
         return query_parameter;
     }
 
-    char* temp = strdup(parameter_string);
-    if (!temp) {
+    char* param_string_copy = strdup(parameter_string);
+    if (!param_string_copy) {
         return query_parameter;
     }
 
     /* '=' 구분자 처리 */
     char *save_ptr2;
 
-    char* key = strtok_r(parameter_string, "=", &save_ptr2);
+    char* key = strtok_r(param_string_copy, "=", &save_ptr2);
     char* value = strtok_r(NULL, "=", &save_ptr2);
 
     if (key) {
         query_parameter.key = strdup(key);
+        if (!query_parameter.key) {
+            free(param_string_copy);
+            return query_parameter; // 메모리 할당 실패
+        }
     }
     if (value) {
         query_parameter.value = strdup(value);
+        if (!query_parameter.value) {
+            free(query_parameter.key);
+            free(param_string_copy);
+            return query_parameter; // 메모리 할당 실패
+        }
     }
 
-    free(temp);
+    free(param_string_copy);
     return query_parameter;
 }
 
@@ -272,7 +281,9 @@ struct http_query_parameter parse_http_query_parameter(char* parameter_string){
 
 struct http_query_parameters* insert_query_parameter(struct http_query_parameters *query_parameters, char* parameter_string){
 
-    if (!query_parameters || !parameter_string) {
+    char * param_string_copy = strdup(parameter_string);
+
+    if (!query_parameters || !param_string_copy) {
         return NULL;
     }
 
@@ -281,7 +292,7 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
         return NULL;
     }
 
-    struct http_query_parameter parsed_param = parse_http_query_parameter(parameter_string);
+    struct http_query_parameter parsed_param = parse_http_query_parameter(param_string_copy);
 
     if (!parsed_param.key || !parsed_param.value) {
         if (parsed_param.key) free(parsed_param.key);
@@ -323,7 +334,7 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
     
     while(token != NULL){
         
-        if (insert_query_parameter(&query_parameters, token) != NULL){
+        if (insert_query_parameter(&query_parameters, token) == NULL){
             // 오류 발생 시 이미 할당된 메모리 정리
             free_query_parameters(&query_parameters);
             return (struct http_query_parameters){0};
@@ -439,20 +450,16 @@ struct http_request parse_http_request(const char *request) {
         header_start += 2; // "\r\n" 건너뛰기
         char *body_start = strstr(header_start, "\r\n\r\n");
         
-        if (body_start) {
-            size_t header_len = body_start - header_start + 2;
-            header = malloc(header_len + 1);
+        size_t header_len = body_start - header_start + 2;
+        header = malloc(header_len + 1);
 
-            if (header) {
-                memcpy(header, header_start, header_len); // 헤더 복사
-                header[header_len] = '\0';
-            }
-
-            body_start += 4;
-            body = strdup(body_start); // 내용 복사
-        } else {
-            header = strdup(header_start);
+        if (header) {
+            memcpy(header, header_start, header_len); // 헤더 복사
+            header[header_len] = '\0';
         }
+
+        body_start += 4;
+        body = strdup(body_start); // 내용 복사
     }
 
     http_headers = header != NULL
