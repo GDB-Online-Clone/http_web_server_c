@@ -246,21 +246,21 @@ struct http_query_parameter parse_http_query_parameter(char* parameter_string){
         return query_parameter;
     }
 
-    char* param_copy = strdup(parameter_string);
-    if (!param_copy) {
+    char* param_string_copy = strdup(parameter_string);
+    if (!param_string_copy) {
         return query_parameter;
     }
 
     /* '=' 구분자 처리 */
     char *save_ptr2;
 
-    char* key = strtok_r(param_copy, "=", &save_ptr2);
+    char* key = strtok_r(param_string_copy, "=", &save_ptr2);
     char* value = strtok_r(NULL, "=", &save_ptr2);
 
     if (key) {
         query_parameter.key = strdup(key);
         if (!query_parameter.key) {
-            free(param_copy);
+            free(param_string_copy);
             return query_parameter; // 메모리 할당 실패
         }
     }
@@ -268,12 +268,12 @@ struct http_query_parameter parse_http_query_parameter(char* parameter_string){
         query_parameter.value = strdup(value);
         if (!query_parameter.value) {
             free(query_parameter.key);
-            free(param_copy);
+            free(param_string_copy);
             return query_parameter; // 메모리 할당 실패
         }
     }
 
-    free(param_copy);
+    free(param_string_copy);
     return query_parameter;
 }
 
@@ -281,7 +281,9 @@ struct http_query_parameter parse_http_query_parameter(char* parameter_string){
 
 struct http_query_parameters* insert_query_parameter(struct http_query_parameters *query_parameters, char* parameter_string){
 
-    if (!query_parameters || !parameter_string) {
+    char * param_string_copy = strdup(parameter_string);
+
+    if (!query_parameters || !param_string_copy) {
         return NULL;
     }
 
@@ -290,7 +292,7 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
         return NULL;
     }
 
-    struct http_query_parameter parsed_param = parse_http_query_parameter(parameter_string);
+    struct http_query_parameter parsed_param = parse_http_query_parameter(param_string_copy);
 
     if (!parsed_param.key || !parsed_param.value) {
         if (parsed_param.key) free(parsed_param.key);
