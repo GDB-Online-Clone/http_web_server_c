@@ -9,3 +9,6 @@
 
 ## documents
 - 코드 베이스 문서들은 <https://sony-string-net/GDB-Online-Clone/Http-Web-Server-C/annotated.html> 여기서 확인하실 수 있습니다.
+
+## rules
+- 어떤 값을 문자열로 바꾸는 것은 stringfy로
