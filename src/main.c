@@ -439,20 +439,16 @@ struct http_request parse_http_request(const char *request) {
         header_start += 2; // "\r\n" 건너뛰기
         char *body_start = strstr(header_start, "\r\n\r\n");
         
-        if (body_start) {
-            size_t header_len = body_start - header_start + 2;
-            header = malloc(header_len + 1);
+        size_t header_len = body_start - header_start + 2;
+        header = malloc(header_len + 1);
 
-            if (header) {
-                memcpy(header, header_start, header_len); // 헤더 복사
-                header[header_len] = '\0';
-            }
-
-            body_start += 4;
-            body = strdup(body_start); // 내용 복사
-        } else {
-            header = strdup(header_start);
+        if (header) {
+            memcpy(header, header_start, header_len); // 헤더 복사
+            header[header_len] = '\0';
         }
+
+        body_start += 4;
+        body = strdup(body_start); // 내용 복사
     }
 
     http_headers = header != NULL
