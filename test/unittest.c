@@ -94,11 +94,11 @@ void test_parse_http_request_1() {
     CU_ASSERT_STRING_EQUAL(request.headers.headers[0]->key,     "Accept");
     CU_ASSERT_STRING_EQUAL(request.headers.headers[0]->value,   "text/html");
 
-    CU_ASSERT_STRING_EQUAL(request.query_parameters.parameters[0]->key,     "q");
-    CU_ASSERT_STRING_EQUAL(request.query_parameters.parameters[0]->value,   "example");
+    CU_ASSERT_STRING_EQUAL(request.query_parameters.query_parameters[0]->key,     "q");
+    CU_ASSERT_STRING_EQUAL(request.query_parameters.query_parameters[0]->value,   "example");
 
-    CU_ASSERT_STRING_EQUAL(request.query_parameters.parameters[1]->key,     "lang");
-    CU_ASSERT_STRING_EQUAL(request.query_parameters.parameters[1]->value,   "en");
+    CU_ASSERT_STRING_EQUAL(request.query_parameters.query_parameters[1]->key,     "lang");
+    CU_ASSERT_STRING_EQUAL(request.query_parameters.query_parameters[1]->value,   "en");
 }
 
 
