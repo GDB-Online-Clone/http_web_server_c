@@ -316,9 +316,9 @@ struct http_query_parameters {
      */
     int size;
     /**
-     * @brief parameters is the array of http_query_parameter
+     * @brief query_parameters is the array of http_query_parameter
      */
-    struct http_query_parameter **parameters;
+    struct http_query_parameter **query_parameters;
 };
 
 /**
