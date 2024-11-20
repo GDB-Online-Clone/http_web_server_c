@@ -147,7 +147,7 @@ struct http_query_parameter parse_http_query_parameter(
  * @note Parameter parsing is performed using parse_http_query_parameter() function
  * @warning Memory allocated within the returned structure must be freed after use
  */
-struct http_query_parameter* insert_qurey_parameter(struct http_query_parameters *query_parameters, char* parameter_string);
+struct http_query_parameters* insert_query_parameter(struct http_query_parameters *query_parameters, char* parameter_string);
 
 /**
  * @brief Parse the query parameters string and return a struct http_query_parameters.
