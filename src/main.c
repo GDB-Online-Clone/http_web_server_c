@@ -312,7 +312,7 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
     new_param->key = parsed_param.key;
     new_param->value = parsed_param.value;
     
-    query_parameters->query_parameters[query_parameters->size++] = new_param;
+    query_parameters->items[query_parameters->size++] = new_param;
     
     return query_parameters;
 }
@@ -324,7 +324,7 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
 
     struct http_query_parameters query_parameters;
     query_parameters.size = 0;
-    query_parameters.query_parameters = 
+    query_parameters.items = 
         (struct http_query_parameter**)malloc(sizeof(struct http_query_parameter*) * 10);
     
     /* '&' 구분자 처리 */
@@ -352,22 +352,23 @@ void free_query_parameters(struct http_query_parameters* query_parameters) {
         return;
     }
 
-    if (query_parameters->query_parameters){
+    if (query_parameters->items){
         for (int i = 0; i < query_parameters->size; i++){
-            if (query_parameters->query_parameters[i]) {
+            if (query_parameters->items[i]) {
 
-                if (query_parameters->query_parameters[i]->key) {
-                    free(query_parameters->query_parameters[i]->key);
+                if (query_parameters->items[i]->key) {
+                    free(query_parameters->items[i]->key);
                 }
-                if (query_parameters->query_parameters[i]->value) {
-                    free(query_parameters->query_parameters[i]->value);
+
+                if (query_parameters->items[i]->value) {
+                    free(query_parameters->items[i]->value);
                 }
-                free(query_parameters->query_parameters[i]);
+                free(query_parameters->items[i]);
             }
         }
 
-        free(query_parameters->query_parameters);
-        query_parameters->query_parameters = NULL;
+        free(query_parameters->items);
+        query_parameters->items = NULL;
     }
     
     query_parameters->size = 0;
@@ -533,7 +534,7 @@ int main() {
 
      DLOG("[query parameters]\n");
     for (int i = 0; i < request.query_parameters.size; i++) {
-        DLOG("%s: %s\n", request.query_parameters.query_parameters[i]->key, request.query_parameters.query_parameters[i]->value);        
+        DLOG("%s: %s\n", request.query_parameters.items[i]->key, request.query_parameters.items[i]->value);        
     }
     return 0;
 }
