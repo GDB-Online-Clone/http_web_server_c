@@ -36,20 +36,20 @@ void test_parse_http_headers_1() {
 
     struct http_headers http_headers = parse_http_headers(http_headers_string);
     
-    CU_ASSERT_STRING_EQUAL(http_headers.headers[0]->key,    "no_quotes");
-    CU_ASSERT_STRING_EQUAL(http_headers.headers[0]->value,  "value quotes with whitespace");
+    CU_ASSERT_STRING_EQUAL(http_headers.items[0]->key,    "no_quotes");
+    CU_ASSERT_STRING_EQUAL(http_headers.items[0]->value,  "value quotes with whitespace");
 
-    CU_ASSERT_STRING_EQUAL(http_headers.headers[1]->key,    "key quotes with whitespace");
-    CU_ASSERT_STRING_EQUAL(http_headers.headers[1]->value,  "value no quotes but whitespace");
+    CU_ASSERT_STRING_EQUAL(http_headers.items[1]->key,    "key quotes with whitespace");
+    CU_ASSERT_STRING_EQUAL(http_headers.items[1]->value,  "value no quotes but whitespace");
 
-    CU_ASSERT_STRING_EQUAL(http_headers.headers[2]->key,    "quote with colon : ");
-    CU_ASSERT_STRING_EQUAL(http_headers.headers[2]->value,  "trimmed_value");
+    CU_ASSERT_STRING_EQUAL(http_headers.items[2]->key,    "quote with colon : ");
+    CU_ASSERT_STRING_EQUAL(http_headers.items[2]->value,  "trimmed_value");
 
-    CU_ASSERT_STRING_EQUAL(http_headers.headers[3]->key,    "quote; \" is in key");
-    CU_ASSERT_STRING_EQUAL(http_headers.headers[3]->value,  "value4");
+    CU_ASSERT_STRING_EQUAL(http_headers.items[3]->key,    "quote; \" is in key");
+    CU_ASSERT_STRING_EQUAL(http_headers.items[3]->value,  "value4");
 
-    CU_ASSERT_STRING_EQUAL(http_headers.headers[4]->key,    "start_with_whitespace");
-    CU_ASSERT_STRING_EQUAL(http_headers.headers[4]->value,  "     \" \"  val\"\"\"ue5 ");
+    CU_ASSERT_STRING_EQUAL(http_headers.items[4]->key,    "start_with_whitespace");
+    CU_ASSERT_STRING_EQUAL(http_headers.items[4]->value,  "     \" \"  val\"\"\"ue5 ");
 }
 
 /**
@@ -85,14 +85,14 @@ void test_parse_http_request_1() {
     
     CU_ASSERT_STRING_EQUAL(request.path, "/search?q=example&lang=en");
     
-    CU_ASSERT_STRING_EQUAL(request.headers.headers[0]->key,     "Host");
-    CU_ASSERT_STRING_EQUAL(request.headers.headers[0]->value,   "www.example.com");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->key,     "Host");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->value,   "www.example.com");
 
-    CU_ASSERT_STRING_EQUAL(request.headers.headers[0]->key,     "User-Agent");
-    CU_ASSERT_STRING_EQUAL(request.headers.headers[0]->value,   "TestClient/1.0");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->key,     "User-Agent");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->value,   "TestClient/1.0");
 
-    CU_ASSERT_STRING_EQUAL(request.headers.headers[0]->key,     "Accept");
-    CU_ASSERT_STRING_EQUAL(request.headers.headers[0]->value,   "text/html");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->key,     "Accept");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->value,   "text/html");
 
     CU_ASSERT_STRING_EQUAL(request.query_parameters.query_parameters[0]->key,     "q");
     CU_ASSERT_STRING_EQUAL(request.query_parameters.query_parameters[0]->value,   "example");

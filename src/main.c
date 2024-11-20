@@ -5,9 +5,9 @@ struct http_headers* insert_header(struct http_headers *headers, char *key, char
     if (headers->capacity == headers->size) {
         int new_capacity = headers->capacity * 2;
 
-        struct http_header** new_headers = realloc(headers->headers, new_capacity * sizeof(struct http_header*));
+        struct http_header** new_headers = realloc(headers->items, new_capacity * sizeof(struct http_header*));
 
-        headers->headers = new_headers;
+        headers->items = new_headers;
         headers->capacity = new_capacity;            
     }
 
@@ -31,19 +31,19 @@ struct http_headers* insert_header(struct http_headers *headers, char *key, char
         .key = new_key,
         .value = new_value
     };
-    headers->headers[headers->size++] = header;
+    headers->items[headers->size++] = header;
     
     return headers;
 }
 
 void destruct_http_headers(struct http_headers *headers) {
     for (int i = 0; i < headers->size; i++) {
-        struct http_header *parsed_header = headers->headers[i];
+        struct http_header *parsed_header = headers->items[i];
         free(parsed_header->key);
         free(parsed_header->value);
         free(parsed_header);
     }        
-    free(headers->headers);
+    free(headers->items);
     headers->capacity = 0;
     headers->size = 0;
 }
@@ -195,7 +195,7 @@ struct http_headers parse_http_headers(char *headers_string) {
     struct http_headers headers_ret = {
         .size = 0,
         .capacity = INITIAL_CAPACITTY,
-        .headers = malloc(INITIAL_CAPACITTY * sizeof(struct http_header))
+        .items = malloc(INITIAL_CAPACITTY * sizeof(struct http_header))
     };
     
     int offset = 0;
@@ -224,13 +224,13 @@ struct http_headers parse_http_headers(char *headers_string) {
         if (headers_ret.capacity == headers_ret.size) {
             int new_capacity = headers_ret.capacity * 2;
 
-            struct http_header** new_headers = realloc(headers_ret.headers, new_capacity * sizeof(struct http_header*));
+            struct http_header** new_headers = realloc(headers_ret.items, new_capacity * sizeof(struct http_header*));
 
-            headers_ret.headers = new_headers;
+            headers_ret.items = new_headers;
             headers_ret.capacity = new_capacity;            
         }
 
-        headers_ret.headers[headers_ret.size++] = parsed_header;
+        headers_ret.items[headers_ret.size++] = parsed_header;
         offset = (int)(CRLF_pointer - headers_string) + 2;
     }
         
@@ -469,7 +469,7 @@ struct http_request parse_http_request(const char *request) {
 
     DLOG("In request parser\n");
     for (int i = 0; i < http_headers.size; i++) {
-        DLOG("%s: %s\n", http_headers.headers[i]->key, http_headers.headers[i]->value);        
+        DLOG("%s: %s\n", http_headers.items[i]->key, http_headers.items[i]->value);        
     }
 
     http_query_parameters = query != NULL
@@ -525,7 +525,7 @@ int main() {
     
     DLOG("[headers]\n");
     for (int i = 0; i < request.headers.size; i++) {
-        DLOG("%s: %s\n", request.headers.headers[i]->key, request.headers.headers[i]->value);        
+        DLOG("%s: %s\n", request.headers.items[i]->key, request.headers.items[i]->value);        
     }
     DLOG("[method]\n%d\n", request.method);
     DLOG("[version]\n%d\n", request.version);

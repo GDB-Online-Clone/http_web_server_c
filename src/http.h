@@ -286,9 +286,9 @@ struct http_headers {
     int capacity;
 
     /**
-     * @brief headers is the array of http_header
+     * @brief the array of http_header
      */
-    struct http_header **headers;
+    struct http_header **items;
 };
 
 /**
