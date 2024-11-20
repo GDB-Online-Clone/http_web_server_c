@@ -194,7 +194,7 @@ struct http_query_parameter* find_query_parameter(char* key);
 void free_query_parameters(struct http_query_parameters* query_parameters);
 
 
-char* http_response_stringfy(struct http_response http_response);
+char* http_response_stringify(struct http_response http_response);
 
 /* http 웹서버 라이브러리 구조체 */
 
