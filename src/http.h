@@ -358,17 +358,17 @@ struct http_response {
     /**
      * @brief headers of http response
      */
-    struct http_headers headers;
+    struct http_headers     headers;
     /**
      * @brief status code of http response
      */
-    enum http_status_code status_code;
+    enum http_status_code   status_code;
+    /**
+     * @brief http protocol version
+     */
+    enum http_version       http_version;
     /**
      * @brief content body of http response. If content body is empty, body is NULL.
      */
     char* body;
-    /**
-     * @brief client socket returned by "accept(2)"
-     */
-    int client_socket;
 };
