@@ -2,10 +2,12 @@
 *.o
 *.d
 prog
+unittest
 
 out/*
 
 # VSCode specific
+.vscode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
@@ -61,3 +63,9 @@ Thumbs.db
 
 # doxygen generated documents
 docs/*
+
+# more things
+include
+include/*
+libs
+libs/*
