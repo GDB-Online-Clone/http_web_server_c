@@ -1,38 +1,24 @@
 ---
-name: Bug report
-about: Create a report to help us improve
+name: Bug
+about: Create Create a report for bug
 title: ''
-labels: ''
+labels: 'bug'
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+### 버그 설명
+버그의 내용에 대해 설명해주세요.
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+### 재현 방법
+재현 방법을 순서대로 적어주세요.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+### 기대 동작
+- 버그가 있는 기능에서 실제 기대되는 동작을 설명해주세요
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+### 환경 정보
+- **관련 파일**: ex) HTTP 쿼리 파라미터 처리 관련 헤더 및 소스 파일
+- **영향 범위**: ex) HTTP 요청 처리 관련 기능
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
-
-**Additional context**
-Add any other context about the problem here.
+### 추가 정보
+추가 정보가 있다면 적어주세요.
