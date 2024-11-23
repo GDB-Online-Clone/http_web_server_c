@@ -1,6 +1,21 @@
 #include "http.h"
 #include "utility.h"
 
+struct routes* init_routes(struct routes *route_table) {
+    const int INITIAL_CAPACITY = 8;
+
+    *route_table = (struct routes) {
+        .capacity = INITIAL_CAPACITY,
+        .items = (struct route **)malloc(INITIAL_CAPACITY * sizeof(struct route *)),
+        .size = 0
+    };
+
+    if (route_table->items == NULL) {
+        route_table->capacity = 0;
+        return NULL;
+    }
+    return route_table;
+}
 
 struct http_headers* insert_header(struct http_headers *headers, char *key, char *value) {
     if (headers->capacity == headers->size) {

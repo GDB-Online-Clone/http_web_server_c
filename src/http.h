@@ -30,6 +30,13 @@ struct http_headers;
 struct http_query_parameters;
 struct http_request;
 struct http_response;
+/**
+ * @brief Initialize members of `sturct routes`.
+ * 
+ * @param route_table `struct routes` to be initialized.
+ * @return The `struct routes*` given as `route_table`. In any situation, failing to store new header, return **NULL**. 
+ */
+struct routes* init_routes(struct routes *route_table);
 
 int init_http_request(
     struct http_request             *request,
