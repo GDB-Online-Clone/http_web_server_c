@@ -24,6 +24,7 @@ enum http_method;
 enum http_version; 
 
 struct route;
+struct routes;
 struct http_header;
 struct http_headers;
 struct http_query_parameters;
@@ -251,6 +252,26 @@ struct route {
      * 
      */
     struct http_response (*callback)(struct http_request request);
+};
+
+
+
+/**
+ * @brief Struct for manage various routes. Route maybe correspond to the endpoint.
+ */
+struct routes {
+    /**
+     * @brief the number of items(routes)
+     */
+    int             size;
+    /**
+     * @brief capacity of routes array
+     */
+    int             capacity;
+    /**
+     * @brief the array of `struct route*`
+     */
+    struct route    **items;
 };
 
 /**
