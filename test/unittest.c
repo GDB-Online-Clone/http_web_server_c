@@ -101,6 +101,21 @@ void test_parse_http_request_1() {
     CU_ASSERT_STRING_EQUAL(request.query_parameters.items[1]->value,   "en");
 }
 
+/**
+ * @brief Test for `init_routes`. Test that members of routes are correctly set and allocated.
+ */
+void test_init_routes_1() {
+    struct routes routes;
+    routes.items = NULL;
+    init_routes(&routes);
+    CU_ASSERT(routes.size == 0);
+    CU_ASSERT(routes.capacity > 0);
+    /* Segment faults Test (or test some other faults) */    
+    CU_ASSERT(routes.items != NULL);
+    free(routes.items);
+}
+
+
 
 int main() {
     if (CUE_SUCCESS != CU_initialize_registry()) {
@@ -120,6 +135,10 @@ int main() {
         return CU_get_error();
     }
     if (NULL == CU_add_test(suite, "test of parse_http_headers(): invalid headers", test_parse_http_headers_2)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of init_routes", test_init_routes_1)) {
         CU_cleanup_registry();
         return CU_get_error();
     }
