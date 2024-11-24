@@ -311,6 +311,49 @@ struct http_headers parse_http_headers(char *headers_string) {
     return headers_ret;
 }
 
+char *http_headers_stringify(struct http_headers *headers) {
+    // No headers to process
+    if (headers == NULL || headers->size == 0 || headers->items == NULL) {
+        return NULL;
+    }
+
+    size_t total_length = 0;
+    for (int i = 0; i < headers->size; i++) {
+        struct http_header *header = headers->items[i];
+
+        // No header to process
+        if (header == NULL || header->key == NULL || header->value == NULL) {
+            continue;
+        }
+
+        // key + ": " + value + "\r\n"
+        // 1. ": " (2 bytes) - separator between key and value
+        // 2. "\r\n" (2 bytes) - line terminator for HTTP headers
+        total_length += strlen(header->key) + strlen(header->value) + 4; 
+    }
+
+    char *result = (char *)malloc(total_length + 1);
+    if (result == NULL) {
+        return NULL; // Allocate memory for the headers string
+    }
+
+    result[0] = '\0'; // Initialize empty string
+    for (int i = 0; i < headers->size; i++) {
+        struct http_header *header = headers->items[i];
+
+        // No header to process
+        if (header == NULL || header->key == NULL || header->value == NULL) {
+            continue;
+        }
+
+        strcat(result, header->key);
+        strcat(result, ": ");
+        strcat(result, header->value);
+        strcat(result, "\r\n");
+    }
+
+    return result;
+}
 
 struct http_query_parameter parse_http_query_parameter(char* parameter_string){
 
@@ -448,10 +491,87 @@ void free_query_parameters(struct http_query_parameters* query_parameters) {
     query_parameters->size = 0;
 }
 
+int init_http_response(
+    struct http_response    *response,
+    enum http_status_code   status_code,
+    struct http_headers     headers,
+    enum http_version       version,
+    char                    *body
+) {
+    // 응답 구조체가 NULL이면 실패
+    if (response == NULL) {
+        return -1;
+    }
+
+    response->status_code = status_code;
+    response->headers = headers;
+    response->http_version = version;
+    response->body = body ? strdup(body) : NULL;
+
+    return 0; // 성공
+}
+
+char* http_response_stringify(struct http_response http_response) {
+    char *header_string = http_headers_stringify(&http_response.headers);
+    if (!header_string) {
+        return NULL; 
+    }
+
+    const char *status_code_string = http_status_code_stringify(
+        http_response.status_code
+    );
+
+    const char *version_string = http_version_stringify(
+        http_response.http_version
+    );
+
+    const char *body = http_response.body ? http_response.body : "";
+
+    //  최종 문자열의 길이를 계산합니다.
+    int required_len = snprintf(
+        NULL, 0, "%s %d %s\r\n%s\r\n%s",
+        version_string,
+        http_response.status_code,
+        status_code_string,
+        header_string,
+        body
+    );
+
+    if (required_len < 0) {
+        free(header_string);
+        return NULL;
+    }
+
+    // 최종 문자열 생성
+    char *response_string = (char *)malloc(required_len + 1);
+    if (!response_string) {
+        free(header_string);
+        return NULL;
+    }
+
+    snprintf(response_string, required_len + 1, "%s %d %s\r\n%s\r\n%s",
+             version_string,
+             http_response.status_code,
+             status_code_string,
+             header_string,
+             body);
+
+    free(header_string);
+    return response_string;
+}
+
 enum http_method parse_http_method(const char *method) {
     if (strcmp(method, "GET") == 0) return HTTP_GET;
     if (strcmp(method, "POST") == 0) return HTTP_POST;
     return HTTP_METHOD_UNKNOWN;
+}
+
+char* http_method_stringify(const enum http_method method) {
+    if (method == HTTP_GET) return "GET";
+    if (method == HTTP_POST) return "POST";
+    if (method == HTTP_PUT) return "PUT";
+    if (method == HTTP_DELETE) return "DELETE";
+    return "UNKNOWN";
 }
 
 enum http_version parse_http_version(const char *version) {
@@ -460,6 +580,54 @@ enum http_version parse_http_version(const char *version) {
     if (strcmp(version, "HTTP/2.0") == 0) return HTTP_2_0;
     if (strcmp(version, "HTTP/3.0") == 0) return HTTP_3_0;
     return HTTP_VERSION_UNKNOWN;
+}
+
+char* http_version_stringify(const enum http_version version) {
+    if (version == HTTP_1_0) return "HTTP/1.0";
+    if (version == HTTP_1_1) return "HTTP/1.1";
+    if (version == HTTP_2_0) return "HTTP/2.0";
+    if (version == HTTP_3_0) return "HTTP/3.0";
+    return "Unknown";
+}
+
+char* http_status_code_stringify(const enum http_status_code code) {
+    // 2xx Success
+    if (code == HTTP_OK) return "OK";
+    if (code == HTTP_CREATED) return "Created";
+    if (code == HTTP_ACCEPTED) return "Accepted";
+    if (code == HTTP_NO_CONTENT) return "No Content";
+
+    // 3xx Redirection
+    if (code == HTTP_MOVED_PERMANENTLY) return "Moved Permanently";
+    if (code == HTTP_FOUND) return "Found";
+    if (code == HTTP_NOT_MODIFIED) return "Not Modified";
+    if (code == HTTP_TEMPORARY_REDIRECT) return "Temporary Redirect";
+    if (code == HTTP_PERMANENT_REDIRECT) return "Permanent Redirect";
+
+    // 4xx Client Errors
+    if (code == HTTP_BAD_REQUEST) return "Bad Request";
+    if (code == HTTP_UNAUTHORIZED) return "Unauthorized";
+    if (code == HTTP_FORBIDDEN) return "Forbidden";
+    if (code == HTTP_NOT_FOUND) return "Not Found";
+    if (code == HTTP_METHOD_NOT_ALLOWED) return "Method Not Allowed";
+    if (code == HTTP_REQUEST_TIMEOUT) return "Request Timeout";
+    if (code == HTTP_CONFLICT) return "Conflict";
+    if (code == HTTP_GONE) return "Gone";
+    if (code == HTTP_LENGTH_REQUIRED) return "Length Required";
+    if (code == HTTP_PAYLOAD_TOO_LARGE) return "Payload Too Large";
+    if (code == HTTP_URI_TOO_LONG) return "URI Too Long";
+    if (code == HTTP_UNSUPPORTED_MEDIA_TYPE) return "Unsupported Media Type";
+    if (code == HTTP_TOO_MANY_REQUESTS) return "Too Many Requests";
+
+    // 5xx Server Errors
+    if (code == HTTP_INTERNAL_SERVER_ERROR) return "Internal Server Error";
+    if (code == HTTP_NOT_IMPLEMENTED) return "Not Implemented";
+    if (code == HTTP_BAD_GATEWAY) return "Bad Gateway";
+    if (code == HTTP_SERVICE_UNAVAILABLE) return "Service Unavailable";
+    if (code == HTTP_GATEWAY_TIMEOUT) return "Gateway Timeout";
+    if (code == HTTP_HTTP_VERSION_NOT_SUPPORTED) return "HTTP Version Not Supported";
+
+    return "Unknown Status";
 }
 
 int init_http_request(
@@ -580,143 +748,120 @@ struct http_request parse_http_request(const char *request) {
     return http_request;
 }
 
-/**
- * @brief Initialize server socket and address
- * @param port Port number to listen on
- * @return Server file descriptor if successful, -1 on error
- */
-static int init_server_socket(int port) {
-    int server_fd;
-    struct sockaddr_in addr;
+int run_web_server(struct web_server server){
+    int server_fd;  // 서버 소켓 파일 디스크립터
+    struct sockaddr_in addr;  // 서버 주소 구조체
+    int addrlen = sizeof(addr);  // 주소 길이
+    char buffer[BUF_SIZE] = {0};  // 클라이언트로부터 읽을 버퍼
 
+    // 소켓 생성
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("socket");
+        perror("socket");  // 소켓 생성 실패 시 에러 출력
         return -1;
     }
 
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = htons(port);
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
+    // 소켓 설정
+    addr.sin_family = AF_INET;  // IPv4
+    addr.sin_addr.s_addr = INADDR_ANY;  // 모든 인터페이스에서 수신
+    addr.sin_port = htons(server.port_num);  // 포트 번호 설정
+
+    // 소켓에 주소 할당
     if (bind(server_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        perror("bind");
+        perror("bind");  // 바인딩 실패 시 에러 출력
+        close(server_fd);
         return -1;
     }
 
+    // 연결 대기 시작
     if (listen(server_fd, 3) < 0) {
-        perror("listen");
+        perror("listen");  // 연결 대기 실패 시 에러 출력
+        close(server_fd);
         return -1;
     }
 
-    return server_fd;
-}
-
-/**
- * @brief Handle client connection and process HTTP request
- * @param new_socket Client socket file descriptor
- * @param route_table Server route table
- * @return 0 on success, -1 on error
- */
-static int handle_client_connection(int new_socket, struct routes *route_table) {
-    char buffer[BUF_SIZE] = {0};
-    ssize_t bytes_read = read(new_socket, buffer, BUF_SIZE);
-
-    if (bytes_read < 0) {
-        perror("read");
-        return -1;
-    } else if (bytes_read == 0) {
-        printf("Client disconnected\n");
-        return 0;
-    }
-
-    struct http_request request = parse_http_request(buffer);
-    struct http_response response = process_request(request, route_table);
-    
-    // Send response
-    char *response_str = http_response_stringify(response);
-    write(new_socket, response_str, strlen(response_str));
-
-    // Cleanup
-    free(response_str);
-    cleanup_request(&request);
-    
-    return 0;
-}
-
-/**
- * @brief Process HTTP request and generate response
- * @param request HTTP request structure
- * @param route_table Server route table
- * @return HTTP response structure
- */
-static struct http_response process_request(struct http_request request, struct routes *route_table) {
-    struct http_response response = {
-        .status_code = HTTP_NOT_FOUND,
-        .http_version = request.version,
-        .body = NULL
-    };
-
-    for (int i = 0; i < route_table->size; i++) {
-        struct route *current_route = &route_table->routes[i];
-        
-        if (strcmp(current_route->path, request.path) == 0 && 
-            current_route->method == request.method) {
-            response = current_route->callback(request);
-            return response;
-        }
-    }
-
-    response.body = "404 Not Found";
-    return response;
-}
-
-/**
- * @brief Cleanup request resources
- * @param request Pointer to HTTP request structure
- */
-static void cleanup_request(struct http_request *request) {
-    destruct_http_headers(&request->headers);
-    free_query_parameters(&request->query_parameters);
-    
-    if (request->body) {
-        free(request->body);
-    }
-    if (request->path) {
-        free(request->path);
-    }
-}
-
-/**
- * @brief Run the web server
- * @param server Web server configuration structure
- * @return 0 on success, -1 on error
- */
-int run_web_server(struct web_server server) {
-    int server_fd = init_server_socket(server.port_num);
-    if (server_fd < 0) {
-        return -1;
-    }
-
-    printf("Server is running on port %d\n", server.port_num);
-
-    struct sockaddr_in addr;
-    int addrlen = sizeof(addr);
+    // 서버 실행 메시지 출력으로 나중에 삭제 가능
+    printf("Server is running on port %d\n", server.port_num);  
 
     while (1) {
-        int new_socket = accept(server_fd, (struct sockaddr *)&addr, 
-                              (socklen_t*)&addrlen);
-        if (new_socket < 0) {
-            perror("accept");
+        int new_socket;  // 새로운 클라이언트 소켓
+
+        // 연결 수락
+        if ((new_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
+            perror("accept");  // 연결 수락 실패 시 에러 출력
+            close(server_fd);
             return -1;
         }
 
-        if (handle_client_connection(new_socket, server.route_table) < 0) {
+        // 클라이언트로부터 요청 읽기
+        ssize_t bytes_read = read(new_socket, buffer, BUF_SIZE);
+
+        if (bytes_read < 0) {
+            perror("read");  // 읽기 실패 시 에러 출력
+            close(new_socket);
+            close(server_fd);
+            return -1;
+        } else if (bytes_read == 0) {
+            printf("Client disconnected\n");  // 클라이언트가 연결을 끊었을 때 메시지 출력
             close(new_socket);
             continue;
-        }
+        } else {
+            // HTTP 요청 파싱
+            struct http_request request = parse_http_request(buffer);
 
-        close(new_socket);
+            // 응답 생성을 위한 기본값 설정
+            struct http_response response = {
+                .status_code = HTTP_NOT_FOUND,  // 기본값으로 404 설정
+                .http_version = request.version,
+                .body = NULL
+            };
+
+            // 라우트 찾기
+            int route_found = 0;
+            for (int i = 0; i < server.route_table->size; i++) {
+                struct route *current_route = &server.route_table->items[i];
+
+                if ((strcmp(current_route->path, request.path) == 0)
+                    && (current_route->method == request.method)) {
+                    // 매칭되는 라우트를 찾음
+                    route_found = 1;
+
+                    // 콜백 함수 실행
+                    response = current_route->callback(request);
+                    break;
+                }
+            }
+
+            // 라우트를 찾지 못한 경우
+            if (!route_found) {
+                response.status_code = HTTP_NOT_FOUND;
+                response.body = "404 Not Found";
+            }
+
+            // HTTP 응답 생성
+            char *response_str = http_response_stringify(response);
+
+            // 클라이언트에 응답 전송
+            write(new_socket, response_str, strlen(response_str));
+
+            // 메모리 정리
+            free(response_str);
+            destruct_http_headers(&request.headers);
+            free_query_parameters(&request.query_parameters);
+
+            if (request.body){
+                free(request.body);
+            }
+            if (request.path){ 
+                free(request.path);
+            }
+
+            close(new_socket);  // 클라이언트 소켓 닫기
+        }
     }
 
+    close(server_fd);  // 서버 소켓 닫기
     return 0;
 }

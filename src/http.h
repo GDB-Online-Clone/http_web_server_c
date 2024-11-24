@@ -87,10 +87,24 @@ struct http_request parse_http_request(const char *request);
 enum http_method parse_http_method(const char *method);
 
 /**
+ * @brief Convert the HTTP method enum to its corresponding string representation.
+ */
+char* http_method_stringify(const enum http_method method);
+
+/**
  * @brief Parse the HTTP version string and return its enum representation.
  */
 enum http_version parse_http_version(const char *version);
 
+/**
+ * @brief Convert an HTTP version enum to its string representation.
+ */
+char* http_version_stringify(const enum http_version version);
+
+/**
+ * @brief Converts an HTTP status code to its reason phrase.
+ */
+char* http_status_code_stringify(const enum http_status_code code);
 
 /**
  * @brief Cleanup `struct http_headers` instance.
@@ -116,6 +130,11 @@ struct http_header* parse_http_header(char *header_string);
  * @return Constructed `struct http_headers` instance. If `struct http_headers::capacity` is **zero**, it means parsing **failed**.
  */
 struct http_headers parse_http_headers(char* headers_string);
+
+/**
+ * @brief Converts http_headers struct into a single HTTP headers string.
+ */
+char *http_headers_stringify(struct http_headers *headers);
 
 /**
  * @brief Insert new header into `headers`.
@@ -236,6 +255,16 @@ struct http_query_parameter* find_query_parameter(char* key);
 */
 void free_query_parameters(struct http_query_parameters* query_parameters);
 
+/**
+ * @brief Initializes an HTTP response with the specified status code, headers, version, and body.
+ */
+int init_http_response(
+    struct http_response    *response,
+    enum http_status_code   status_code,
+    struct http_headers     headers,
+    enum http_version       version,
+    char                    *body
+);
 
 char* http_response_stringify(struct http_response http_response);
 
@@ -246,12 +275,41 @@ char* http_response_stringify(struct http_response http_response);
  * @note enum value has `int` type
  */
 enum http_status_code {
+    // 2xx Success
     HTTP_OK = 200,
-    HTTP_NOT_FOUND = 404,
+    HTTP_CREATED = 201,
+    HTTP_ACCEPTED = 202,
+    HTTP_NO_CONTENT = 204,
+
+    // 3xx Redirection
+    HTTP_MOVED_PERMANENTLY = 301,
+    HTTP_FOUND = 302,
+    HTTP_NOT_MODIFIED = 304,
+    HTTP_TEMPORARY_REDIRECT = 307,
+    HTTP_PERMANENT_REDIRECT = 308,
+
+    // 4xx Client Errors
     HTTP_BAD_REQUEST = 400,
-    HTTP_INTERNAL_SERVER_ERROR = 500,
+    HTTP_UNAUTHORIZED = 401,
     HTTP_FORBIDDEN = 403,
-    HTTP_UNAUTHORIZED = 401
+    HTTP_NOT_FOUND = 404,
+    HTTP_METHOD_NOT_ALLOWED = 405,
+    HTTP_REQUEST_TIMEOUT = 408,
+    HTTP_CONFLICT = 409,
+    HTTP_GONE = 410,
+    HTTP_LENGTH_REQUIRED = 411,
+    HTTP_PAYLOAD_TOO_LARGE = 413,
+    HTTP_URI_TOO_LONG = 414,
+    HTTP_UNSUPPORTED_MEDIA_TYPE = 415,
+    HTTP_TOO_MANY_REQUESTS = 429,
+
+    // 5xx Server Errors
+    HTTP_INTERNAL_SERVER_ERROR = 500,
+    HTTP_NOT_IMPLEMENTED = 501,
+    HTTP_BAD_GATEWAY = 502,
+    HTTP_SERVICE_UNAVAILABLE = 503,
+    HTTP_GATEWAY_TIMEOUT = 504,
+    HTTP_HTTP_VERSION_NOT_SUPPORTED = 505
 };
 
 /**
@@ -261,6 +319,8 @@ enum http_status_code {
 enum http_method {
     HTTP_GET,
     HTTP_POST,
+    HTTP_PUT,
+    HTTP_DELETE,
     HTTP_METHOD_UNKNOWN, // Unknown method handling
 };
 
