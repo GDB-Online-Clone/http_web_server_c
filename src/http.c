@@ -438,6 +438,55 @@ int init_http_response(
     return 0; // 성공
 }
 
+char* http_response_stringify(struct http_response http_response) {
+    char *header_string = http_headers_stringify(&http_response.headers);
+    if (!header_string) {
+        return NULL; 
+    }
+
+    const char *status_code_string = http_status_code_stringfy(
+        http_response.status_code
+    );
+
+    const char *version_string = http_version_stringify(
+        http_response.http_version
+    );
+
+    const char *body = http_response.body ? http_response.body : "";
+
+    //  최종 문자열의 길이를 계산합니다.
+    int required_len = snprintf(
+        NULL, 0, "%s %d %s\r\n%s\r\n%s",
+        version_string,
+        http_response.status_code,
+        status_code_string,
+        header_string,
+        body
+    );
+
+    if (required_len < 0) {
+        free(header_string);
+        return NULL;
+    }
+
+    // 최종 문자열 생성
+    char *response_string = (char *)malloc(required_len + 1);
+    if (!response_string) {
+        free(header_string);
+        return NULL;
+    }
+
+    snprintf(response_string, required_len + 1, "%s %d %s\r\n%s\r\n%s",
+             version_string,
+             http_response.status_code,
+             status_code_string,
+             header_string,
+             body);
+
+    free(header_string);
+    return response_string;
+}
+
 enum http_method parse_http_method(const char *method) {
     if (strcmp(method, "GET") == 0) return HTTP_GET;
     if (strcmp(method, "POST") == 0) return HTTP_POST;
