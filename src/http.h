@@ -40,6 +40,24 @@ struct http_response;
  * @return Route matched by `path` and `method`. Returns NULL if not found.
  */
 struct route *find_route(const struct routes* routes, const char *path, enum http_method method);
+
+/**
+ * @brief Insert new route into `sturct routes`. `path` must start with '/'.   
+ * If you pass a route with same path and method as the route that already exists in `route_table`, it will be failed.
+ * 
+ * @param route_table `struct routes` to be inserted with a new route
+ * @param path URL path of route
+ * @param method HTTP method accepted by the new route
+ * @param callback function to execute when HTTP request reaches the route
+ * @return The `struct routes*` given as `route_table`. In any situation, failing to store new header, return **NULL**. 
+ */
+struct routes* insert_route(
+		struct routes       *route_table,
+		const char          *path,
+		enum http_method    method,
+		struct http_response(*callback)(struct http_request request)
+);
+
 /**
  * @brief Initialize members of `sturct routes`.
  * 

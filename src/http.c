@@ -10,6 +10,46 @@ struct route *find_route(const struct routes* routes, const char *path, enum htt
     return NULL;
 }
 
+struct routes* insert_route(
+		struct routes       *route_table,
+		const char          *path,
+		enum http_method    method,
+		struct http_response(*callback)(struct http_request request)
+) {
+    if (path[0] != '/')
+        return NULL;
+    if (find_route(route_table, path, method))
+        return NULL;
+
+    if (route_table->capacity == route_table->size) {
+        int new_capacity = route_table->capacity * 2;
+
+        struct route** new_route_table = (struct route**)realloc(route_table->items, new_capacity * sizeof(struct route*));
+
+        route_table->items = new_route_table;
+        route_table->capacity = new_capacity;            
+    }
+
+    struct route *route = (struct route *)malloc(sizeof(struct route));
+    if (route == NULL)
+        return NULL;
+
+    *route = (struct route) {
+        .callback = callback,
+        .method = method,
+        .path = strdup(path)    
+    };
+    
+    if (!route->path) {        
+        free(route);        
+        return NULL;
+    }
+
+    route_table->items[route_table->size++] = route;
+    
+    return route_table;
+}
+
 struct routes* init_routes(struct routes *route_table) {
     const int INITIAL_CAPACITY = 8;
 
