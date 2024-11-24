@@ -372,3 +372,33 @@ struct http_response {
      */
     char* body;
 };
+
+/**
+ * @struct web_server
+ * @brief Represents a web server with routing and status information.
+ * 
+ * This structure holds the routing table, HTTP status code, and response body
+ * for a web server.
+ * 
+ * @var web_server::route_table
+ * Pointer to the routing table containing the routes for the web server.
+ * 
+ * @var web_server::status_code
+ * The HTTP status code representing the current status of the web server.
+ * 
+ * @var web_server::body
+ * Pointer to the response body content to be sent to the client.
+ */
+struct web_server {
+    struct routes *route_table;
+    enum http_status_code status_code;
+    int port_num;
+    char *body;
+};
+
+/**
+ * @brief Run the web server
+ * @param server Web server configuration structure
+ * @return 0 on success, -1 on error
+ */
+int run_web_server(struct web_server server);
