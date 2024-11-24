@@ -3,78 +3,6 @@
 
 #define BUF_SIZE 1024 /* <- 임시 버퍼 크기*/
 
-struct http_header* find_header(const struct http_headers *headers, const char *key) {
-    for (int i = 0; i < headers->size; i++) {
-        if (strcmp(headers->items[i]->key, key) == 0) 
-            return headers->items[i];
-    }
-    return NULL;
-}
-
-struct route *find_route(const struct routes* routes, const char *path, enum http_method method) {
-    for (int i = 0; i < routes->size; i++) {
-        if (routes->items[i]->method == method && url_path_cmp(path, routes->items[i]->path) == 0)
-            return routes->items[i];
-    }
-    return NULL;
-}
-
-struct routes* insert_route(
-		struct routes       *route_table,
-		const char          *path,
-		enum http_method    method,
-		struct http_response(*callback)(struct http_request request)
-) {
-    if (path[0] != '/')
-        return NULL;
-    if (find_route(route_table, path, method))
-        return NULL;
-
-    if (route_table->capacity == route_table->size) {
-        int new_capacity = route_table->capacity * 2;
-
-        struct route** new_route_table = (struct route**)realloc(route_table->items, new_capacity * sizeof(struct route*));
-
-        route_table->items = new_route_table;
-        route_table->capacity = new_capacity;            
-    }
-
-    struct route *route = (struct route *)malloc(sizeof(struct route));
-    if (route == NULL)
-        return NULL;
-
-    *route = (struct route) {
-        .callback = callback,
-        .method = method,
-        .path = strdup(path)    
-    };
-    
-    if (!route->path) {        
-        free(route);        
-        return NULL;
-    }
-
-    route_table->items[route_table->size++] = route;
-    
-    return route_table;
-}
-
-struct routes* init_routes(struct routes *route_table) {
-    const int INITIAL_CAPACITY = 8;
-
-    *route_table = (struct routes) {
-        .capacity = INITIAL_CAPACITY,
-        .items = (struct route **)malloc(INITIAL_CAPACITY * sizeof(struct route *)),
-        .size = 0
-    };
-
-    if (route_table->items == NULL) {
-        route_table->capacity = 0;
-        return NULL;
-    }
-    return route_table;
-}
-
 struct http_headers* insert_header(struct http_headers *headers, char *key, char *value) {
     if (headers->capacity == headers->size) {
         int new_capacity = headers->capacity * 2;
@@ -580,142 +508,107 @@ struct http_request parse_http_request(const char *request) {
     return http_request;
 }
 
-/**
- * @brief Initialize server socket and address
- * @param port Port number to listen on
- * @return Server file descriptor if successful, -1 on error
- */
-static int init_server_socket(int port) {
-    int server_fd;
-    struct sockaddr_in addr;
+int run_web_server(struct web_server server){
+    int server_fd;  // 서버 소켓 파일 디스크립터
+    struct sockaddr_in addr;  // 서버 주소 구조체
+    int addrlen = sizeof(addr);  // 주소 길이
+    char buffer[BUF_SIZE] = {0};  // 클라이언트로부터 읽을 버퍼
 
+    // 소켓 생성
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("socket");
+        perror("socket");  // 소켓 생성 실패 시 에러 출력
         return -1;
     }
 
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = htons(port);
+    // 소켓 설정
+    addr.sin_family = AF_INET;  // IPv4
+    addr.sin_addr.s_addr = INADDR_ANY;  // 모든 인터페이스에서 수신
+    addr.sin_port = htons(server.port_num);  // 포트 번호 설정
 
+    // 소켓에 주소 할당
     if (bind(server_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        perror("bind");
+        perror("bind");  // 바인딩 실패 시 에러 출력
         return -1;
     }
 
+    // 연결 대기 시작
     if (listen(server_fd, 3) < 0) {
-        perror("listen");
+        perror("listen");  // 연결 대기 실패 시 에러 출력
         return -1;
     }
 
-    return server_fd;
-}
-
-/**
- * @brief Handle client connection and process HTTP request
- * @param new_socket Client socket file descriptor
- * @param route_table Server route table
- * @return 0 on success, -1 on error
- */
-static int handle_client_connection(int new_socket, struct routes *route_table) {
-    char buffer[BUF_SIZE] = {0};
-    ssize_t bytes_read = read(new_socket, buffer, BUF_SIZE);
-
-    if (bytes_read < 0) {
-        perror("read");
-        return -1;
-    } else if (bytes_read == 0) {
-        printf("Client disconnected\n");
-        return 0;
-    }
-
-    struct http_request request = parse_http_request(buffer);
-    struct http_response response = process_request(request, route_table);
-    
-    // Send response
-    char *response_str = http_response_stringify(response);
-    write(new_socket, response_str, strlen(response_str));
-
-    // Cleanup
-    free(response_str);
-    cleanup_request(&request);
-    
-    return 0;
-}
-
-/**
- * @brief Process HTTP request and generate response
- * @param request HTTP request structure
- * @param route_table Server route table
- * @return HTTP response structure
- */
-static struct http_response process_request(struct http_request request, struct routes *route_table) {
-    struct http_response response = {
-        .status_code = HTTP_NOT_FOUND,
-        .http_version = request.version,
-        .body = NULL
-    };
-
-    for (int i = 0; i < route_table->size; i++) {
-        struct route *current_route = &route_table->routes[i];
-        
-        if (strcmp(current_route->path, request.path) == 0 && 
-            current_route->method == request.method) {
-            response = current_route->callback(request);
-            return response;
-        }
-    }
-
-    response.body = "404 Not Found";
-    return response;
-}
-
-/**
- * @brief Cleanup request resources
- * @param request Pointer to HTTP request structure
- */
-static void cleanup_request(struct http_request *request) {
-    destruct_http_headers(&request->headers);
-    free_query_parameters(&request->query_parameters);
-    
-    if (request->body) {
-        free(request->body);
-    }
-    if (request->path) {
-        free(request->path);
-    }
-}
-
-/**
- * @brief Run the web server
- * @param server Web server configuration structure
- * @return 0 on success, -1 on error
- */
-int run_web_server(struct web_server server) {
-    int server_fd = init_server_socket(server.port_num);
-    if (server_fd < 0) {
-        return -1;
-    }
-
-    printf("Server is running on port %d\n", server.port_num);
-
-    struct sockaddr_in addr;
-    int addrlen = sizeof(addr);
+    // 서버 실행 메시지 출력으로 나중에 삭제 가능
+    printf("Server is running on port %d\n", server.port_num);  
 
     while (1) {
-        int new_socket = accept(server_fd, (struct sockaddr *)&addr, 
-                              (socklen_t*)&addrlen);
-        if (new_socket < 0) {
-            perror("accept");
+        int new_socket;  // 새로운 클라이언트 소켓
+
+        // 연결 수락
+        if ((new_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
+            perror("accept");  // 연결 수락 실패 시 에러 출력
             return -1;
         }
 
-        if (handle_client_connection(new_socket, server.route_table) < 0) {
-            close(new_socket);
-            continue;
-        }
+        // 클라이언트로부터 요청 읽기
+        ssize_t bytes_read = read(new_socket, buffer, BUF_SIZE);
 
-        close(new_socket);
+        if (bytes_read < 0) {
+            perror("read");  // 읽기 실패 시 에러 출력
+            return -1;
+        } else if (bytes_read == 0) {
+            printf("Client disconnected\n");  // 클라이언트가 연결을 끊었을 때 메시지 출력
+            continue;
+        } else {
+            // HTTP 요청 파싱
+            struct http_request request = parse_http_request(buffer);
+
+            // 응답 생성을 위한 기본값 설정
+            struct http_response response = {
+                .status_code = HTTP_NOT_FOUND,  // 기본값으로 404 설정
+                .http_version = request.version,
+                .body = NULL
+            };
+
+            // 라우트 찾기
+            int route_found = 0;
+            for (int i = 0; i < server.route_table->size; i++) {
+                struct route *current_route = &server.route_table->items[i];
+
+                if ((strcmp(current_route->path, request.path) == 0)
+                    && (current_route->method == request.method)) {
+                    // 매칭되는 라우트를 찾음
+                    route_found = 1;
+
+                    // 콜백 함수 실행
+                    response = current_route->callback(request);
+                    break;
+                }
+            }
+
+            // 라우트를 찾지 못한 경우
+            if (!route_found) {
+                response.status_code = HTTP_NOT_FOUND;
+                response.body = "404 Not Found";
+            }
+
+            // HTTP 응답 생성
+            char *response_str = http_response_stringify(response);
+
+            // 클라이언트에 응답 전송
+            write(new_socket, response_str, strlen(response_str));
+
+            // 메모리 정리
+            free(response_str);
+            destruct_http_headers(&request.headers);
+            free_query_parameters(&request.query_parameters);
+
+            if (request.body){
+                free(request.body);
+            }
+            if (request.path){ 
+                free(request.path);
+            }
+        }
     }
 
     return 0;
