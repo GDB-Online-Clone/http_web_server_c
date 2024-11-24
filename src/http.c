@@ -1,6 +1,7 @@
 #include "http.h"
 #include "utility.h"
 
+#define BUF_SIZE 1024 /* <- 임시 버퍼 크기*/
 
 struct http_header* find_header(const struct http_headers *headers, const char *key) {
     for (int i = 0; i < headers->size; i++) {
@@ -577,4 +578,145 @@ struct http_request parse_http_request(const char *request) {
     free(body);
 
     return http_request;
+}
+
+/**
+ * @brief Initialize server socket and address
+ * @param port Port number to listen on
+ * @return Server file descriptor if successful, -1 on error
+ */
+static int init_server_socket(int port) {
+    int server_fd;
+    struct sockaddr_in addr;
+
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket");
+        return -1;
+    }
+
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(port);
+
+    if (bind(server_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        perror("bind");
+        return -1;
+    }
+
+    if (listen(server_fd, 3) < 0) {
+        perror("listen");
+        return -1;
+    }
+
+    return server_fd;
+}
+
+/**
+ * @brief Handle client connection and process HTTP request
+ * @param new_socket Client socket file descriptor
+ * @param route_table Server route table
+ * @return 0 on success, -1 on error
+ */
+static int handle_client_connection(int new_socket, struct routes *route_table) {
+    char buffer[BUF_SIZE] = {0};
+    ssize_t bytes_read = read(new_socket, buffer, BUF_SIZE);
+
+    if (bytes_read < 0) {
+        perror("read");
+        return -1;
+    } else if (bytes_read == 0) {
+        printf("Client disconnected\n");
+        return 0;
+    }
+
+    struct http_request request = parse_http_request(buffer);
+    struct http_response response = process_request(request, route_table);
+    
+    // Send response
+    char *response_str = http_response_stringify(response);
+    write(new_socket, response_str, strlen(response_str));
+
+    // Cleanup
+    free(response_str);
+    cleanup_request(&request);
+    
+    return 0;
+}
+
+/**
+ * @brief Process HTTP request and generate response
+ * @param request HTTP request structure
+ * @param route_table Server route table
+ * @return HTTP response structure
+ */
+static struct http_response process_request(struct http_request request, struct routes *route_table) {
+    struct http_response response = {
+        .status_code = HTTP_NOT_FOUND,
+        .http_version = request.version,
+        .body = NULL
+    };
+
+    for (int i = 0; i < route_table->size; i++) {
+        struct route *current_route = &route_table->routes[i];
+        
+        if (strcmp(current_route->path, request.path) == 0 && 
+            current_route->method == request.method) {
+            response = current_route->callback(request);
+            return response;
+        }
+    }
+
+    response.body = "404 Not Found";
+    return response;
+}
+
+/**
+ * @brief Cleanup request resources
+ * @param request Pointer to HTTP request structure
+ */
+static void cleanup_request(struct http_request *request) {
+    destruct_http_headers(&request->headers);
+    free_query_parameters(&request->query_parameters);
+    
+    if (request->body) {
+        free(request->body);
+    }
+    if (request->path) {
+        free(request->path);
+    }
+}
+
+/**
+ * @brief Run the web server
+ * @param server Web server configuration structure
+ * @return 0 on success, -1 on error
+ */
+int run_web_server(struct web_server server) {
+    int server_fd = init_server_socket(server.port_num);
+    if (server_fd < 0) {
+        return -1;
+    }
+
+    printf("Server is running on port %d\n", server.port_num);
+
+    struct sockaddr_in addr;
+    int addrlen = sizeof(addr);
+
+    while (1) {
+        int new_socket = accept(server_fd, (struct sockaddr *)&addr, 
+                              (socklen_t*)&addrlen);
+        if (new_socket < 0) {
+            perror("accept");
+            return -1;
+        }
+
+        if (handle_client_connection(new_socket, server.route_table) < 0) {
+            close(new_socket);
+            continue;
+        }
+
+        close(new_socket);
+    }
+
+    return 0;
 }
