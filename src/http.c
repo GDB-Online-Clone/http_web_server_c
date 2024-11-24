@@ -239,6 +239,49 @@ struct http_headers parse_http_headers(char *headers_string) {
     return headers_ret;
 }
 
+char *http_headers_stringify(struct http_headers *headers) {
+    // No headers to process
+    if (headers == NULL || headers->size == 0 || headers->items == NULL) {
+        return NULL;
+    }
+
+    size_t total_length = 0;
+    for (int i = 0; i < headers->size; i++) {
+        struct http_header *header = headers->items[i];
+
+        // No header to process
+        if (header == NULL || header->key == NULL || header->value == NULL) {
+            continue;
+        }
+
+        // key + ": " + value + "\r\n"
+        // 1. ": " (2 bytes) - separator between key and value
+        // 2. "\r\n" (2 bytes) - line terminator for HTTP headers
+        total_length += strlen(header->key) + strlen(header->value) + 4; 
+    }
+
+    char *result = (char *)malloc(total_length + 1);
+    if (result == NULL) {
+        return NULL; // Allocate memory for the headers string
+    }
+
+    result[0] = '\0'; // Initialize empty string
+    for (int i = 0; i < headers->size; i++) {
+        struct http_header *header = headers->items[i];
+
+        // No header to process
+        if (header == NULL || header->key == NULL || header->value == NULL) {
+            continue;
+        }
+
+        strcat(result, header->key);
+        strcat(result, ": ");
+        strcat(result, header->value);
+        strcat(result, "\r\n");
+    }
+
+    return result;
+}
 
 struct http_query_parameter parse_http_query_parameter(char* parameter_string){
 
@@ -376,10 +419,87 @@ void free_query_parameters(struct http_query_parameters* query_parameters) {
     query_parameters->size = 0;
 }
 
+int init_http_response(
+    struct http_response    *response,
+    enum http_status_code   status_code,
+    struct http_headers     headers,
+    enum http_version       version,
+    char                    *body
+) {
+    // 응답 구조체가 NULL이면 실패
+    if (response == NULL) {
+        return -1;
+    }
+
+    response->status_code = status_code;
+    response->headers = headers;
+    response->http_version = version;
+    response->body = body ? strdup(body) : NULL;
+
+    return 0; // 성공
+}
+
+char* http_response_stringify(struct http_response http_response) {
+    char *header_string = http_headers_stringify(&http_response.headers);
+    if (!header_string) {
+        return NULL; 
+    }
+
+    const char *status_code_string = http_status_code_stringify(
+        http_response.status_code
+    );
+
+    const char *version_string = http_version_stringify(
+        http_response.http_version
+    );
+
+    const char *body = http_response.body ? http_response.body : "";
+
+    //  최종 문자열의 길이를 계산합니다.
+    int required_len = snprintf(
+        NULL, 0, "%s %d %s\r\n%s\r\n%s",
+        version_string,
+        http_response.status_code,
+        status_code_string,
+        header_string,
+        body
+    );
+
+    if (required_len < 0) {
+        free(header_string);
+        return NULL;
+    }
+
+    // 최종 문자열 생성
+    char *response_string = (char *)malloc(required_len + 1);
+    if (!response_string) {
+        free(header_string);
+        return NULL;
+    }
+
+    snprintf(response_string, required_len + 1, "%s %d %s\r\n%s\r\n%s",
+             version_string,
+             http_response.status_code,
+             status_code_string,
+             header_string,
+             body);
+
+    free(header_string);
+    return response_string;
+}
+
 enum http_method parse_http_method(const char *method) {
     if (strcmp(method, "GET") == 0) return HTTP_GET;
     if (strcmp(method, "POST") == 0) return HTTP_POST;
     return HTTP_METHOD_UNKNOWN;
+}
+
+char* http_method_stringify(const enum http_method method) {
+    if (method == HTTP_GET) return "GET";
+    if (method == HTTP_POST) return "POST";
+    if (method == HTTP_PUT) return "PUT";
+    if (method == HTTP_DELETE) return "DELETE";
+    return "UNKNOWN";
 }
 
 enum http_version parse_http_version(const char *version) {
@@ -388,6 +508,54 @@ enum http_version parse_http_version(const char *version) {
     if (strcmp(version, "HTTP/2.0") == 0) return HTTP_2_0;
     if (strcmp(version, "HTTP/3.0") == 0) return HTTP_3_0;
     return HTTP_VERSION_UNKNOWN;
+}
+
+char* http_version_stringify(const enum http_version version) {
+    if (version == HTTP_1_0) return "HTTP/1.0";
+    if (version == HTTP_1_1) return "HTTP/1.1";
+    if (version == HTTP_2_0) return "HTTP/2.0";
+    if (version == HTTP_3_0) return "HTTP/3.0";
+    return "Unknown";
+}
+
+char* http_status_code_stringify(const enum http_status_code code) {
+    // 2xx Success
+    if (code == HTTP_OK) return "OK";
+    if (code == HTTP_CREATED) return "Created";
+    if (code == HTTP_ACCEPTED) return "Accepted";
+    if (code == HTTP_NO_CONTENT) return "No Content";
+
+    // 3xx Redirection
+    if (code == HTTP_MOVED_PERMANENTLY) return "Moved Permanently";
+    if (code == HTTP_FOUND) return "Found";
+    if (code == HTTP_NOT_MODIFIED) return "Not Modified";
+    if (code == HTTP_TEMPORARY_REDIRECT) return "Temporary Redirect";
+    if (code == HTTP_PERMANENT_REDIRECT) return "Permanent Redirect";
+
+    // 4xx Client Errors
+    if (code == HTTP_BAD_REQUEST) return "Bad Request";
+    if (code == HTTP_UNAUTHORIZED) return "Unauthorized";
+    if (code == HTTP_FORBIDDEN) return "Forbidden";
+    if (code == HTTP_NOT_FOUND) return "Not Found";
+    if (code == HTTP_METHOD_NOT_ALLOWED) return "Method Not Allowed";
+    if (code == HTTP_REQUEST_TIMEOUT) return "Request Timeout";
+    if (code == HTTP_CONFLICT) return "Conflict";
+    if (code == HTTP_GONE) return "Gone";
+    if (code == HTTP_LENGTH_REQUIRED) return "Length Required";
+    if (code == HTTP_PAYLOAD_TOO_LARGE) return "Payload Too Large";
+    if (code == HTTP_URI_TOO_LONG) return "URI Too Long";
+    if (code == HTTP_UNSUPPORTED_MEDIA_TYPE) return "Unsupported Media Type";
+    if (code == HTTP_TOO_MANY_REQUESTS) return "Too Many Requests";
+
+    // 5xx Server Errors
+    if (code == HTTP_INTERNAL_SERVER_ERROR) return "Internal Server Error";
+    if (code == HTTP_NOT_IMPLEMENTED) return "Not Implemented";
+    if (code == HTTP_BAD_GATEWAY) return "Bad Gateway";
+    if (code == HTTP_SERVICE_UNAVAILABLE) return "Service Unavailable";
+    if (code == HTTP_GATEWAY_TIMEOUT) return "Gateway Timeout";
+    if (code == HTTP_HTTP_VERSION_NOT_SUPPORTED) return "HTTP Version Not Supported";
+
+    return "Unknown Status";
 }
 
 int init_http_request(
