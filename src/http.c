@@ -444,7 +444,7 @@ char* http_response_stringify(struct http_response http_response) {
         return NULL; 
     }
 
-    const char *status_code_string = http_status_code_stringfy(
+    const char *status_code_string = http_status_code_stringify(
         http_response.status_code
     );
 
@@ -517,7 +517,7 @@ char* http_version_stringify(const enum http_version version) {
     return "Unknown";
 }
 
-char* http_status_code_stringfy(const enum http_status_code code) {
+char* http_status_code_stringify(const enum http_status_code code) {
     // 2xx Success
     if (code == HTTP_OK) return "OK";
     if (code == HTTP_CREATED) return "Created";

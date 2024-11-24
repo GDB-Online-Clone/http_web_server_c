@@ -68,7 +68,7 @@ char* http_version_stringify(const enum http_version version);
 /**
  * @brief Converts an HTTP status code to its reason phrase.
  */
-char* http_status_code_stringfy(const enum http_status_code code);
+char* http_status_code_stringify(const enum http_status_code code);
 
 /**
  * @brief Cleanup `struct http_headers` instance.
