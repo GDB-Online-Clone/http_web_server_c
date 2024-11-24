@@ -65,6 +65,27 @@ void test_parse_http_headers_2() {
 }
 
 /**
+ * @brief test for `find_header()`
+ * 
+ */
+void test_find_header() {
+    struct http_headers headers = (struct http_headers) {
+        .capacity = 8,
+        .items = (struct http_header **)malloc(8 * sizeof(int *)),
+        .size = 0
+    };
+
+    insert_header(&headers, "k1", "v1");
+    insert_header(&headers, "k2", "v2");
+    insert_header(&headers, "k3", "v3");
+    insert_header(&headers, "k4", "v4");
+
+    CU_ASSERT_STRING_EQUAL(find_header(&headers, "k1")->value, "v1");
+    CU_ASSERT_STRING_EQUAL(find_header(&headers, "k4")->value, "v4");
+    CU_ASSERT(find_header(&headers, "k0") == NULL);
+}
+
+/**
  * @brief parse_http_request() test code. Input need to be parsed successfully.
  * Input is GET method and has no body.
  * 
@@ -217,6 +238,10 @@ int main() {
         return CU_get_error();
     }
     if (NULL == CU_add_test(suite, "test of parse_http_headers(): invalid headers", test_parse_http_headers_2)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of find_header", test_find_header)) {
         CU_cleanup_registry();
         return CU_get_error();
     }
