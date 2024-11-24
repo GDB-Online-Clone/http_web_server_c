@@ -135,6 +135,44 @@ struct http_response empty_callback(struct http_request request) {
         .status_code = HTTP_OK
     };
 }
+
+/**
+ * @brief Test for `insert_route`. Test that `routes` successfully stores the arguments which passed. 
+ *      This also contains a stress test for testing realloc.
+ * @warning **[Dependency of tests]**
+ * `init_routes`
+ * `parse_http_request`
+ */
+void test_insert_route() {
+    struct routes routes;    
+    char *http_request_string = 
+            "GET /path/to/api HTTP/1.1\r\n"
+            "Host: www.example.com\r\n"
+            "\r\n";
+    struct http_request request_temp = parse_http_request(http_request_string);
+
+    init_routes(&routes);
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+    CU_ASSERT_STRING_EQUAL(routes.items[0]->path, "/path/to/api");
+    CU_ASSERT(routes.size == 1);    
+    CU_ASSERT_STRING_EQUAL(routes.items[0]->callback(request_temp).body, "hello");
+    CU_ASSERT(routes.items[0]->method == HTTP_GET);
+
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+    CU_ASSERT(routes.size == 1);
+
+    for (int i = 1; i < 100; i++) {
+        char path[64];
+        sprintf(path, "/path/to/api%d", i);
+        insert_route(&routes, path, HTTP_GET, empty_callback);
+        CU_ASSERT_STRING_EQUAL(routes.items[i]->path, path);
+        CU_ASSERT(routes.size == i + 1);    
+        CU_ASSERT(routes.size <= routes.capacity); 
+        CU_ASSERT_STRING_EQUAL(routes.items[i]->callback(request_temp).body, "hello");
+        CU_ASSERT(routes.items[i]->method == HTTP_GET);
+    }
+}
+
 /**
  * @brief Test for `test_find_route`.
  * @warning **[Dependency of tests]**   
@@ -187,6 +225,10 @@ int main() {
         return CU_get_error();
     }
     if (NULL == CU_add_test(suite, "test of url_path_cmp", test_url_path_cmp)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of insert_route", test_insert_route)) {
         CU_cleanup_registry();
         return CU_get_error();
     }
