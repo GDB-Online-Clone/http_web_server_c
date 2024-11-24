@@ -756,30 +756,31 @@ int run_web_server(struct web_server server){
 
     // 소켓 생성
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("socket");  // 소켓 생성 실패 시 에러 출력
-        return -1;
+        perror("socket"); 
+        return errno;
     }
 
+    // 소켓 재사용 옵션 설정
     int opt = 1;
     setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     // 소켓 설정
     addr.sin_family = AF_INET;  // IPv4
-    addr.sin_addr.s_addr = INADDR_ANY;  // 모든 인터페이스에서 수신
-    addr.sin_port = htons(server.port_num);  // 포트 번호 설정
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(server.port_num);
 
     // 소켓에 주소 할당
     if (bind(server_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        perror("bind");  // 바인딩 실패 시 에러 출력
+        perror("bind");
         close(server_fd);
-        return -1;
+        return errno;
     }
 
     // 연결 대기 시작
-    if (listen(server_fd, 3) < 0) {
-        perror("listen");  // 연결 대기 실패 시 에러 출력
+    if (listen(server_fd, server.backlog) < 0) {
+        perror("listen");
         close(server_fd);
-        return -1;
+        return errno;
     }
 
 
