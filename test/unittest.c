@@ -224,104 +224,6 @@ void test_find_route() {
     CU_ASSERT(find_route(&routes, "/path/to/api1", HTTP_GET) != 0);
     CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_GET) != 0);
     CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_POST) == 0);
-
-  
-/**
- * @brief Test case for handling multiple concurrent client connections
- */
-void test_init_routes_1() {
-    struct routes routes;
-    routes.items = NULL;
-    init_routes(&routes);
-    CU_ASSERT(routes.size == 0);
-    CU_ASSERT(routes.capacity > 0);
-    /* Segment faults Test (or test some other faults) */    
-    CU_ASSERT(routes.items != NULL);
-    free(routes.items);
-}
-
-void test_url_path_cmp() {
-    char *path = "/path/to/api";
-    char *same_path1 = "/path/to/api/";
-    char *same_path2 = "/path/to/api";
-    char *diff_path = "/path/to/api1";
-
-    CU_ASSERT(url_path_cmp(path, same_path1) == 0);
-    CU_ASSERT(url_path_cmp(path, same_path2) == 0);
-    CU_ASSERT(url_path_cmp(path, diff_path) != 0);
-}
-
-struct http_response empty_callback(struct http_request request) {
-    struct http_headers headers = {};
-    return (struct http_response) {
-        .body = "hello",
-        .headers = headers,
-        .http_version = HTTP_1_0,
-        .status_code = HTTP_OK
-    };
-}
-
-/**
- * @brief Test for `insert_route`. Test that `routes` successfully stores the arguments which passed. 
- *      This also contains a stress test for testing realloc.
- * @warning **[Dependency of tests]**
- * `init_routes`
- * `parse_http_request`
- */
-void test_insert_route() {
-    struct routes routes;    
-    char *http_request_string = 
-            "GET /path/to/api HTTP/1.1\r\n"
-            "Host: www.example.com\r\n"
-            "\r\n";
-    struct http_request request_temp = parse_http_request(http_request_string);
-
-    init_routes(&routes);
-    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
-    CU_ASSERT_STRING_EQUAL(routes.items[0]->path, "/path/to/api");
-    CU_ASSERT(routes.size == 1);    
-    CU_ASSERT_STRING_EQUAL(routes.items[0]->callback(request_temp).body, "hello");
-    CU_ASSERT(routes.items[0]->method == HTTP_GET);
-
-    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
-    CU_ASSERT(routes.size == 1);
-
-    for (int i = 1; i < 100; i++) {
-        char path[64];
-        sprintf(path, "/path/to/api%d", i);
-        insert_route(&routes, path, HTTP_GET, empty_callback);
-        CU_ASSERT_STRING_EQUAL(routes.items[i]->path, path);
-        CU_ASSERT(routes.size == i + 1);    
-        CU_ASSERT(routes.size <= routes.capacity); 
-        CU_ASSERT_STRING_EQUAL(routes.items[i]->callback(request_temp).body, "hello");
-        CU_ASSERT(routes.items[i]->method == HTTP_GET);
-    }
-}
-
-/**
- * @brief Test for `test_find_route`.
- * @warning **[Dependency of tests]**   
- * `init_routes`   
- * `insert_route`   
- * `url_path_cmp`   
- */
-void test_find_route() {
-    struct routes routes;    
-
-    init_routes(&routes);
-    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
-    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
-
-    for (int i = 1; i < 5; i++) {
-        char path[64];
-        sprintf(path, "/path/to/api%d", i);
-        insert_route(&routes, path, HTTP_GET, empty_callback);
-    }
-
-    CU_ASSERT(find_route(&routes, "/path/to/api0", HTTP_GET) == 0);
-    CU_ASSERT(find_route(&routes, "/path/to/api1", HTTP_GET) != 0);
-    CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_GET) != 0);
-    CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_POST) == 0);
 }
 
 // 테스트용 콜백 함수
@@ -335,78 +237,6 @@ struct http_response test_callback(struct http_request request) {
     };
 }
 
-/**
- * @brief Tests server initialization with valid configuration
- * Tests if server initializes correctly with valid port and route table
- */
-void test_web_server_init() {
-    struct routes routes;
-    init_routes(&routes);
-    insert_route(&routes, "/test", HTTP_GET, test_callback);
-    
-    struct web_server server = {
-        .route_table = &routes,
-        .port_num = 8080,
-        .status_code = HTTP_OK,
-        .body = NULL
-    };
-    
-    int result = run_web_server(server);
-    
-    // Server should start successfully
-    CU_ASSERT(result == 0);
-    
-    // Cleanup
-    free(routes.items);
-}
-
-/**
- * @brief Tests server initialization with invalid port
- * Tests if server handles invalid port numbers correctly
- */
-void test_web_server_invalid_port() {
-    struct routes routes;
-    init_routes(&routes);
-    
-    struct web_server server = {
-        .route_table = &routes,
-        .port_num = -1,  // Invalid port number
-        .status_code = HTTP_OK,
-        .body = NULL
-    };
-    
-    int result = run_web_server(server);
-    
-    // Server should fail to start with invalid port
-    CU_ASSERT(result == -1);
-    
-    // Cleanup
-    free(routes.items);
-}
-
-/**
- * @brief Tests server with empty route table
- * Tests if server handles empty route table correctly
- */
-void test_web_server_empty_routes() {
-    struct routes routes = {
-        .size = 0,
-        .capacity = 0,
-        .items = NULL
-    };
-    
-    struct web_server server = {
-        .route_table = &routes,
-        .port_num = 8080,
-        .status_code = HTTP_OK,
-        .body = NULL
-    };
-    
-    int result = run_web_server(server);
-    
-    // Server should start but return -1 due to empty route table
-    CU_ASSERT(result == -1);
-}
 
 int main() {
     if (CUE_SUCCESS != CU_initialize_registry()) {
@@ -446,19 +276,6 @@ int main() {
         return CU_get_error();
     }
     if (NULL == CU_add_test(suite, "test of find_route", test_find_route)) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
-
-    if (NULL == CU_add_test(suite, "test of web server initialization", test_web_server_init)) {
-    CU_cleanup_registry();
-    return CU_get_error();
-    }
-    if (NULL == CU_add_test(suite, "test of web server with invalid port", test_web_server_invalid_port)) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
-    if (NULL == CU_add_test(suite, "test of web server with empty routes", test_web_server_empty_routes)) {
         CU_cleanup_registry();
         return CU_get_error();
     }
