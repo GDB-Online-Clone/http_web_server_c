@@ -793,8 +793,9 @@ int run_web_server(struct web_server server){
             return -1;
         }
 
-        // 클라이언트로부터 요청 읽기
-        ssize_t bytes_read = read(new_socket, buffer, BUF_SIZE);
+        total_read = 0;
+        bytes_read = read(client_socket, buffer, (size_t)1024 * buffer_size_kb - 1);
+        total_read += bytes_read;
 
         if (bytes_read < 0) {
             perror("read");
