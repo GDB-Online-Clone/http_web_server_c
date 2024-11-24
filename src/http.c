@@ -397,6 +397,46 @@ char* http_version_stringify(const enum http_version version) {
     return "Unknown";
 }
 
+char* http_status_code_stringfy(const enum http_status_code code) {
+    // 2xx Success
+    if (code == HTTP_OK) return "OK";
+    if (code == HTTP_CREATED) return "Created";
+    if (code == HTTP_ACCEPTED) return "Accepted";
+    if (code == HTTP_NO_CONTENT) return "No Content";
+
+    // 3xx Redirection
+    if (code == HTTP_MOVED_PERMANENTLY) return "Moved Permanently";
+    if (code == HTTP_FOUND) return "Found";
+    if (code == HTTP_NOT_MODIFIED) return "Not Modified";
+    if (code == HTTP_TEMPORARY_REDIRECT) return "Temporary Redirect";
+    if (code == HTTP_PERMANENT_REDIRECT) return "Permanent Redirect";
+
+    // 4xx Client Errors
+    if (code == HTTP_BAD_REQUEST) return "Bad Request";
+    if (code == HTTP_UNAUTHORIZED) return "Unauthorized";
+    if (code == HTTP_FORBIDDEN) return "Forbidden";
+    if (code == HTTP_NOT_FOUND) return "Not Found";
+    if (code == HTTP_METHOD_NOT_ALLOWED) return "Method Not Allowed";
+    if (code == HTTP_REQUEST_TIMEOUT) return "Request Timeout";
+    if (code == HTTP_CONFLICT) return "Conflict";
+    if (code == HTTP_GONE) return "Gone";
+    if (code == HTTP_LENGTH_REQUIRED) return "Length Required";
+    if (code == HTTP_PAYLOAD_TOO_LARGE) return "Payload Too Large";
+    if (code == HTTP_URI_TOO_LONG) return "URI Too Long";
+    if (code == HTTP_UNSUPPORTED_MEDIA_TYPE) return "Unsupported Media Type";
+    if (code == HTTP_TOO_MANY_REQUESTS) return "Too Many Requests";
+
+    // 5xx Server Errors
+    if (code == HTTP_INTERNAL_SERVER_ERROR) return "Internal Server Error";
+    if (code == HTTP_NOT_IMPLEMENTED) return "Not Implemented";
+    if (code == HTTP_BAD_GATEWAY) return "Bad Gateway";
+    if (code == HTTP_SERVICE_UNAVAILABLE) return "Service Unavailable";
+    if (code == HTTP_GATEWAY_TIMEOUT) return "Gateway Timeout";
+    if (code == HTTP_HTTP_VERSION_NOT_SUPPORTED) return "HTTP Version Not Supported";
+
+    return "Unknown Status";
+}
+
 int init_http_request(
     struct http_request             *request,
     struct http_headers             headers,
