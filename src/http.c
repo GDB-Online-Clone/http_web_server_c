@@ -802,11 +802,11 @@ int run_web_server(struct web_server server){
 
     while (1) {
         int     client_socket;
-ssize_t bytes_read;
+        ssize_t bytes_read;
         ssize_t total_read;
 
         if ((client_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
-perror("accept");
+            perror("accept");
             close(server_fd);
             // TODO(server log print)
             continue;
@@ -830,7 +830,7 @@ perror("accept");
         if (total_read == 0) {
             printf("Client disconnected\n"); 
             close(client_socket);
-// TODO(server log print)
+            // TODO(server log print)
             continue;
         } 
     
