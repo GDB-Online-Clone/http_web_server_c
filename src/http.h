@@ -30,6 +30,16 @@ struct http_headers;
 struct http_query_parameters;
 struct http_request;
 struct http_response;
+
+/**
+ * @brief Find the route correspond to path and http method.
+ * 
+ * @param routes route table to search
+ * @param path URL path to find
+ * @param method HTTP method to find
+ * @return Route matched by `path` and `method`. Returns NULL if not found.
+ */
+struct route *find_route(const struct routes* routes, const char *path, enum http_method method);
 /**
  * @brief Initialize members of `sturct routes`.
  * 

@@ -1,6 +1,15 @@
 #include "http.h"
 #include "utility.h"
 
+
+struct route *find_route(const struct routes* routes, const char *path, enum http_method method) {
+    for (int i = 0; i < routes->size; i++) {
+        if (routes->items[i]->method == method && url_path_cmp(path, routes->items[i]->path) == 0)
+            return routes->items[i];
+    }
+    return NULL;
+}
+
 struct routes* init_routes(struct routes *route_table) {
     const int INITIAL_CAPACITY = 8;
 
