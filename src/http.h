@@ -256,6 +256,8 @@ enum http_status_code {
 enum http_method {
     HTTP_GET,
     HTTP_POST,
+    HTTP_PUT,
+    HTTP_DELETE,
     HTTP_METHOD_UNKNOWN, // Unknown method handling
 };
 
