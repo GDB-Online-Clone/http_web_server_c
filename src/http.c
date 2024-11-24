@@ -2,6 +2,14 @@
 #include "utility.h"
 
 
+struct http_header* find_header(const struct http_headers *headers, const char *key) {
+    for (int i = 0; i < headers->size; i++) {
+        if (strcmp(headers->items[i]->key, key) == 0) 
+            return headers->items[i];
+    }
+    return NULL;
+}
+
 struct route *find_route(const struct routes* routes, const char *path, enum http_method method) {
     for (int i = 0; i < routes->size; i++) {
         if (routes->items[i]->method == method && url_path_cmp(path, routes->items[i]->path) == 0)

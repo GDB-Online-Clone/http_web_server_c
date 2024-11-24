@@ -128,7 +128,14 @@ struct http_headers parse_http_headers(char* headers_string);
  */
 struct http_headers* insert_header(struct http_headers *headers, char* key, char* value);
 
-struct http_header* find_header(char* key);
+/**
+ * @brief Find a header having same `key` in `headers`.
+ * 
+ * @param headers List of headers to search for.
+ * @param key key of header
+ * @return Header matched by `key`. Returns NULL if not found.
+ */
+struct http_header* find_header(const struct http_headers *headers, const char *key);
 
 /**
  * @brief Parses a query parameter string into key-value pair
