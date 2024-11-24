@@ -51,6 +51,11 @@ struct http_request parse_http_request(const char *request);
 enum http_method parse_http_method(const char *method);
 
 /**
+ * @brief Convert the HTTP method enum to its corresponding string representation.
+ */
+char* http_method_stringify(const enum http_method method);
+
+/**
  * @brief Parse the HTTP version string and return its enum representation.
  */
 enum http_version parse_http_version(const char *version);

@@ -381,6 +381,14 @@ enum http_method parse_http_method(const char *method) {
     return HTTP_METHOD_UNKNOWN;
 }
 
+char* http_method_stringify(const enum http_method method) {
+    if (method == HTTP_GET) return "GET";
+    if (method == HTTP_POST) return "POST";
+    if (method == HTTP_PUT) return "PUT";
+    if (method == HTTP_DELETE) return "DELETE";
+    return "UNKNOWN";
+}
+
 enum http_version parse_http_version(const char *version) {
     if (strcmp(version, "HTTP/1.0") == 0) return HTTP_1_0;
     if (strcmp(version, "HTTP/1.1") == 0) return HTTP_1_1;
