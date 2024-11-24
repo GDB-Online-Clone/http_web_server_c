@@ -520,6 +520,9 @@ int run_web_server(struct web_server server){
         return -1;
     }
 
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
     // 소켓 설정
     addr.sin_family = AF_INET;  // IPv4
     addr.sin_addr.s_addr = INADDR_ANY;  // 모든 인터페이스에서 수신
@@ -528,12 +531,14 @@ int run_web_server(struct web_server server){
     // 소켓에 주소 할당
     if (bind(server_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         perror("bind");  // 바인딩 실패 시 에러 출력
+        close(server_fd);
         return -1;
     }
 
     // 연결 대기 시작
     if (listen(server_fd, 3) < 0) {
         perror("listen");  // 연결 대기 실패 시 에러 출력
+        close(server_fd);
         return -1;
     }
 
@@ -546,6 +551,7 @@ int run_web_server(struct web_server server){
         // 연결 수락
         if ((new_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
             perror("accept");  // 연결 수락 실패 시 에러 출력
+            close(server_fd);
             return -1;
         }
 
@@ -554,9 +560,12 @@ int run_web_server(struct web_server server){
 
         if (bytes_read < 0) {
             perror("read");  // 읽기 실패 시 에러 출력
+            close(new_socket);
+            close(server_fd);
             return -1;
         } else if (bytes_read == 0) {
             printf("Client disconnected\n");  // 클라이언트가 연결을 끊었을 때 메시지 출력
+            close(new_socket);
             continue;
         } else {
             // HTTP 요청 파싱
@@ -608,8 +617,11 @@ int run_web_server(struct web_server server){
             if (request.path){ 
                 free(request.path);
             }
+
+            close(new_socket);  // 클라이언트 소켓 닫기
         }
     }
 
+    close(server_fd);  // 서버 소켓 닫기
     return 0;
 }
