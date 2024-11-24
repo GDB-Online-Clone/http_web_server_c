@@ -513,9 +513,6 @@ int init_http_response(
 
 char* http_response_stringify(struct http_response http_response) {
     char *header_string = http_headers_stringify(&http_response.headers);
-    if (!header_string) {
-        return NULL; 
-    }
 
     const char *status_code_string = http_status_code_stringify(
         http_response.status_code
@@ -533,19 +530,25 @@ char* http_response_stringify(struct http_response http_response) {
         version_string,
         http_response.status_code,
         status_code_string,
-        header_string,
-        body
+        header_string != NULL ? header_string : "",
+        body 
     );
 
     if (required_len < 0) {
-        free(header_string);
+        if (header_string != NULL) {
+            free(header_string);
+        }
+
         return NULL;
     }
 
     // 최종 문자열 생성
     char *response_string = (char *)malloc(required_len + 1);
     if (!response_string) {
-        free(header_string);
+         if (header_string != NULL) {
+            free(header_string);
+        }
+
         return NULL;
     }
 
@@ -553,10 +556,13 @@ char* http_response_stringify(struct http_response http_response) {
              version_string,
              http_response.status_code,
              status_code_string,
-             header_string,
+             header_string != NULL ? header_string : "",
              body);
 
-    free(header_string);
+    if (header_string != NULL) {
+        free(header_string);
+    }
+
     return response_string;
 }
 
