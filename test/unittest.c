@@ -224,6 +224,104 @@ void test_find_route() {
     CU_ASSERT(find_route(&routes, "/path/to/api1", HTTP_GET) != 0);
     CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_GET) != 0);
     CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_POST) == 0);
+
+  
+/**
+ * @brief Test case for handling multiple concurrent client connections
+ */
+void test_init_routes_1() {
+    struct routes routes;
+    routes.items = NULL;
+    init_routes(&routes);
+    CU_ASSERT(routes.size == 0);
+    CU_ASSERT(routes.capacity > 0);
+    /* Segment faults Test (or test some other faults) */    
+    CU_ASSERT(routes.items != NULL);
+    free(routes.items);
+}
+
+void test_url_path_cmp() {
+    char *path = "/path/to/api";
+    char *same_path1 = "/path/to/api/";
+    char *same_path2 = "/path/to/api";
+    char *diff_path = "/path/to/api1";
+
+    CU_ASSERT(url_path_cmp(path, same_path1) == 0);
+    CU_ASSERT(url_path_cmp(path, same_path2) == 0);
+    CU_ASSERT(url_path_cmp(path, diff_path) != 0);
+}
+
+struct http_response empty_callback(struct http_request request) {
+    struct http_headers headers = {};
+    return (struct http_response) {
+        .body = "hello",
+        .headers = headers,
+        .http_version = HTTP_1_0,
+        .status_code = HTTP_OK
+    };
+}
+
+/**
+ * @brief Test for `insert_route`. Test that `routes` successfully stores the arguments which passed. 
+ *      This also contains a stress test for testing realloc.
+ * @warning **[Dependency of tests]**
+ * `init_routes`
+ * `parse_http_request`
+ */
+void test_insert_route() {
+    struct routes routes;    
+    char *http_request_string = 
+            "GET /path/to/api HTTP/1.1\r\n"
+            "Host: www.example.com\r\n"
+            "\r\n";
+    struct http_request request_temp = parse_http_request(http_request_string);
+
+    init_routes(&routes);
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+    CU_ASSERT_STRING_EQUAL(routes.items[0]->path, "/path/to/api");
+    CU_ASSERT(routes.size == 1);    
+    CU_ASSERT_STRING_EQUAL(routes.items[0]->callback(request_temp).body, "hello");
+    CU_ASSERT(routes.items[0]->method == HTTP_GET);
+
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+    CU_ASSERT(routes.size == 1);
+
+    for (int i = 1; i < 100; i++) {
+        char path[64];
+        sprintf(path, "/path/to/api%d", i);
+        insert_route(&routes, path, HTTP_GET, empty_callback);
+        CU_ASSERT_STRING_EQUAL(routes.items[i]->path, path);
+        CU_ASSERT(routes.size == i + 1);    
+        CU_ASSERT(routes.size <= routes.capacity); 
+        CU_ASSERT_STRING_EQUAL(routes.items[i]->callback(request_temp).body, "hello");
+        CU_ASSERT(routes.items[i]->method == HTTP_GET);
+    }
+}
+
+/**
+ * @brief Test for `test_find_route`.
+ * @warning **[Dependency of tests]**   
+ * `init_routes`   
+ * `insert_route`   
+ * `url_path_cmp`   
+ */
+void test_find_route() {
+    struct routes routes;    
+
+    init_routes(&routes);
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+
+    for (int i = 1; i < 5; i++) {
+        char path[64];
+        sprintf(path, "/path/to/api%d", i);
+        insert_route(&routes, path, HTTP_GET, empty_callback);
+    }
+
+    CU_ASSERT(find_route(&routes, "/path/to/api0", HTTP_GET) == 0);
+    CU_ASSERT(find_route(&routes, "/path/to/api1", HTTP_GET) != 0);
+    CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_GET) != 0);
+    CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_POST) == 0);
 }
 
 // 테스트용 콜백 함수
