@@ -115,7 +115,16 @@ void test_init_routes_1() {
     free(routes.items);
 }
 
+void test_url_path_cmp() {
+    char *path = "/path/to/api";
+    char *same_path1 = "/path/to/api/";
+    char *same_path2 = "/path/to/api";
+    char *diff_path = "/path/to/api1";
 
+    CU_ASSERT(url_path_cmp(path, same_path1) == 0);
+    CU_ASSERT(url_path_cmp(path, same_path2) == 0);
+    CU_ASSERT(url_path_cmp(path, diff_path) != 0);
+}
 
 int main() {
     if (CUE_SUCCESS != CU_initialize_registry()) {
@@ -139,6 +148,10 @@ int main() {
         return CU_get_error();
     }
     if (NULL == CU_add_test(suite, "test of init_routes", test_init_routes_1)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of url_path_cmp", test_url_path_cmp)) {
         CU_cleanup_registry();
         return CU_get_error();
     }
