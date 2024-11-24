@@ -796,11 +796,18 @@ int run_web_server(struct web_server server){
 
     while (1) {
         int     client_socket;
+ssize_t bytes_read;
+        ssize_t total_read;
 
         if ((client_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
+perror("accept");
             close(server_fd);
-            return -1;
+            // TODO(server log print)
+            continue;
         }
+
+        // 수신 버퍼 초기화
+        memset(buffer, 0, buffer_size_kb * 1024);
 
         total_read = 0;
         bytes_read = read(client_socket, buffer, (size_t)1024 * buffer_size_kb - 1);
@@ -810,12 +817,16 @@ int run_web_server(struct web_server server){
             perror("read");
             close(client_socket);
             close(server_fd);
-            return -1;
-        } else if (bytes_read == 0) {
-            printf("Client disconnected\n");  // 클라이언트가 연결을 끊었을 때 메시지 출력
-            close(new_socket);
+            // TODO(server log print)
             continue;
+}
+        
+        if (total_read == 0) {
+            printf("Client disconnected\n"); 
             close(client_socket);
+// TODO(server log print)
+            continue;
+        } 
     
         request = parse_http_request(buffer);
 
