@@ -96,6 +96,11 @@ struct http_header* parse_http_header(char *header_string);
 struct http_headers parse_http_headers(char* headers_string);
 
 /**
+ * @brief Converts http_headers struct into a single HTTP headers string.
+ */
+char *http_headers_stringify(struct http_headers *headers);
+
+/**
  * @brief Insert new header into `headers`.
  * 
  * @param headers a `struct http_headers` where wants to store given header having 'key' and 'value'.

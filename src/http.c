@@ -238,6 +238,49 @@ struct http_headers parse_http_headers(char *headers_string) {
     return headers_ret;
 }
 
+char *http_headers_stringify(struct http_headers *headers) {
+    // No headers to process
+    if (headers == NULL || headers->size == 0 || headers->items == NULL) {
+        return NULL;
+    }
+
+    size_t total_length = 0;
+    for (int i = 0; i < headers->size; i++) {
+        struct http_header *header = headers->items[i];
+
+        // No header to process
+        if (header == NULL || header->key == NULL || header->value == NULL) {
+            continue;
+        }
+
+        // key + ": " + value + "\r\n"
+        // 1. ": " (2 bytes) - separator between key and value
+        // 2. "\r\n" (2 bytes) - line terminator for HTTP headers
+        total_length += strlen(header->key) + strlen(header->value) + 4; 
+    }
+
+    char *result = (char *)malloc(total_length + 1);
+    if (result == NULL) {
+        return NULL; // Allocate memory for the headers string
+    }
+
+    result[0] = '\0'; // Initialize empty string
+    for (int i = 0; i < headers->size; i++) {
+        struct http_header *header = headers->items[i];
+
+        // No header to process
+        if (header == NULL || header->key == NULL || header->value == NULL) {
+            continue;
+        }
+
+        strcat(result, header->key);
+        strcat(result, ": ");
+        strcat(result, header->value);
+        strcat(result, "\r\n");
+    }
+
+    return result;
+}
 
 struct http_query_parameter parse_http_query_parameter(char* parameter_string){
 
