@@ -55,6 +55,10 @@ enum http_method parse_http_method(const char *method);
  */
 enum http_version parse_http_version(const char *version);
 
+/**
+ * @brief Convert an HTTP version enum to its string representation.
+ */
+char* http_version_stringify(const enum http_version version);
 
 /**
  * @brief Cleanup `struct http_headers` instance.

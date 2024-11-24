@@ -389,6 +389,14 @@ enum http_version parse_http_version(const char *version) {
     return HTTP_VERSION_UNKNOWN;
 }
 
+char* http_version_stringify(const enum http_version version) {
+    if (version == HTTP_1_0) return "HTTP/1.0";
+    if (version == HTTP_1_1) return "HTTP/1.1";
+    if (version == HTTP_2_0) return "HTTP/2.0";
+    if (version == HTTP_3_0) return "HTTP/3.0";
+    return "Unknown";
+}
+
 int init_http_request(
     struct http_request             *request,
     struct http_headers             headers,
