@@ -1,6 +1,10 @@
 #include "http.h"
 #include "utility.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 static struct http_response hello_world(struct http_request request) {
     struct http_response response;
     
@@ -20,7 +24,7 @@ static struct http_response find_words(struct http_request request) {
     struct http_response response;
     char *found = request.body;
     int cnt = 0;
-    while (found = strstr(found, "aaba")) {
+    while ((found = strstr(found, "aaba"))) {
         cnt++;
     }
 
@@ -103,3 +107,5 @@ int main() {
     // }
     return 0;
 }
+
+#pragma GCC diagnostic pop
