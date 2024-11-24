@@ -24,11 +24,47 @@ enum http_method;
 enum http_version; 
 
 struct route;
+struct routes;
 struct http_header;
 struct http_headers;
 struct http_query_parameters;
 struct http_request;
 struct http_response;
+
+/**
+ * @brief Find the route correspond to path and http method.
+ * 
+ * @param routes route table to search
+ * @param path URL path to find
+ * @param method HTTP method to find
+ * @return Route matched by `path` and `method`. Returns NULL if not found.
+ */
+struct route *find_route(const struct routes* routes, const char *path, enum http_method method);
+
+/**
+ * @brief Insert new route into `sturct routes`. `path` must start with '/'.   
+ * If you pass a route with same path and method as the route that already exists in `route_table`, it will be failed.
+ * 
+ * @param route_table `struct routes` to be inserted with a new route
+ * @param path URL path of route
+ * @param method HTTP method accepted by the new route
+ * @param callback function to execute when HTTP request reaches the route
+ * @return The `struct routes*` given as `route_table`. In any situation, failing to store new header, return **NULL**. 
+ */
+struct routes* insert_route(
+		struct routes       *route_table,
+		const char          *path,
+		enum http_method    method,
+		struct http_response(*callback)(struct http_request request)
+);
+
+/**
+ * @brief Initialize members of `sturct routes`.
+ * 
+ * @param route_table `struct routes` to be initialized.
+ * @return The `struct routes*` given as `route_table`. In any situation, failing to store new header, return **NULL**. 
+ */
+struct routes* init_routes(struct routes *route_table);
 
 int init_http_request(
     struct http_request             *request,
@@ -92,7 +128,14 @@ struct http_headers parse_http_headers(char* headers_string);
  */
 struct http_headers* insert_header(struct http_headers *headers, char* key, char* value);
 
-struct http_header* find_header(char* key);
+/**
+ * @brief Find a header having same `key` in `headers`.
+ * 
+ * @param headers List of headers to search for.
+ * @param key key of header
+ * @return Header matched by `key`. Returns NULL if not found.
+ */
+struct http_header* find_header(const struct http_headers *headers, const char *key);
 
 /**
  * @brief Parses a query parameter string into key-value pair
@@ -251,6 +294,26 @@ struct route {
      * 
      */
     struct http_response (*callback)(struct http_request request);
+};
+
+
+
+/**
+ * @brief Struct for manage various routes. Route maybe correspond to the endpoint.
+ */
+struct routes {
+    /**
+     * @brief the number of items(routes)
+     */
+    int             size;
+    /**
+     * @brief capacity of routes array
+     */
+    int             capacity;
+    /**
+     * @brief the array of `struct route*`
+     */
+    struct route    **items;
 };
 
 /**
