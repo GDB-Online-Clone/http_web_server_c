@@ -1,6 +1,7 @@
 #include "http.h"
 #include "utility.h"
 
+#define BUF_SIZE 1024 /* <- 임시 버퍼 크기*/
 
 struct http_headers* insert_header(struct http_headers *headers, char *key, char *value) {
     if (headers->capacity == headers->size) {
@@ -505,4 +506,110 @@ struct http_request parse_http_request(const char *request) {
     free(body);
 
     return http_request;
+}
+
+int run_web_server(struct web_server server){
+    int server_fd;  // 서버 소켓 파일 디스크립터
+    struct sockaddr_in addr;  // 서버 주소 구조체
+    int addrlen = sizeof(addr);  // 주소 길이
+    char buffer[BUF_SIZE] = {0};  // 클라이언트로부터 읽을 버퍼
+
+    // 소켓 생성
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket");  // 소켓 생성 실패 시 에러 출력
+        return -1;
+    }
+
+    // 소켓 설정
+    addr.sin_family = AF_INET;  // IPv4
+    addr.sin_addr.s_addr = INADDR_ANY;  // 모든 인터페이스에서 수신
+    addr.sin_port = htons(server.port_num);  // 포트 번호 설정
+
+    // 소켓에 주소 할당
+    if (bind(server_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        perror("bind");  // 바인딩 실패 시 에러 출력
+        return -1;
+    }
+
+    // 연결 대기 시작
+    if (listen(server_fd, 3) < 0) {
+        perror("listen");  // 연결 대기 실패 시 에러 출력
+        return -1;
+    }
+
+    // 서버 실행 메시지 출력으로 나중에 삭제 가능
+    printf("Server is running on port %d\n", PORT);  
+
+    while (1) {
+        int new_socket;  // 새로운 클라이언트 소켓
+
+        // 연결 수락
+        if ((new_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
+            perror("accept");  // 연결 수락 실패 시 에러 출력
+            return -1;
+        }
+
+        // 클라이언트로부터 요청 읽기
+        ssize_t bytes_read = read(new_socket, buffer, BUF_SIZE);
+
+        if (bytes_read < 0) {
+            perror("read");  // 읽기 실패 시 에러 출력
+            return -1;
+        } else if (bytes_read == 0) {
+            printf("Client disconnected\n");  // 클라이언트가 연결을 끊었을 때 메시지 출력
+            continue;
+        } else {
+            // HTTP 요청 파싱
+            struct http_request request = parse_http_request(buffer);
+
+            // 응답 생성을 위한 기본값 설정
+            struct http_response response = {
+                .status_code = HTTP_NOT_FOUND,  // 기본값으로 404 설정
+                .http_version = request.version,
+                .body = NULL
+            };
+
+            // 라우트 찾기
+            int route_found = 0;
+            for (int i = 0; i < server.route_table->size; i++) {
+                struct route *current_route = &server.route_table->routes[i];
+
+                if ((strcmp(current_route->path, request.path) == 0)
+                    && (current_route->method == request.method)) {
+                    // 매칭되는 라우트를 찾음
+                    route_found = 1;
+
+                    // 콜백 함수 실행
+                    response = current_route->callback(request);
+                    break;
+                }
+            }
+
+            // 라우트를 찾지 못한 경우
+            if (!route_found) {
+                response.status_code = HTTP_NOT_FOUND;
+                response.body = "404 Not Found";
+            }
+
+            // HTTP 응답 생성
+            char *response_str = http_response_stringify(response);
+
+            // 클라이언트에 응답 전송
+            write(new_socket, response_str, strlen(response_str));
+
+            // 메모리 정리
+            free(response_str);
+            destruct_http_headers(&request.headers);
+            free_query_parameters(&request.query_parameters);
+
+            if (request.body){
+                free(request.body);
+            }
+            if (request.path){ 
+                free(request.path);
+            }
+        }
+    }
+
+    return 0;
 }
