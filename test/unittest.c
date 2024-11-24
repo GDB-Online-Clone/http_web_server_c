@@ -126,6 +126,41 @@ void test_url_path_cmp() {
     CU_ASSERT(url_path_cmp(path, diff_path) != 0);
 }
 
+struct http_response empty_callback(struct http_request request) {
+    struct http_headers headers = {};
+    return (struct http_response) {
+        .body = "hello",
+        .headers = headers,
+        .http_version = HTTP_1_0,
+        .status_code = HTTP_OK
+    };
+}
+/**
+ * @brief Test for `test_find_route`.
+ * @warning **[Dependency of tests]**   
+ * `init_routes`   
+ * `insert_route`   
+ * `url_path_cmp`   
+ */
+void test_find_route() {
+    struct routes routes;    
+
+    init_routes(&routes);
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+
+    for (int i = 1; i < 5; i++) {
+        char path[64];
+        sprintf(path, "/path/to/api%d", i);
+        insert_route(&routes, path, HTTP_GET, empty_callback);
+    }
+
+    CU_ASSERT(find_route(&routes, "/path/to/api0", HTTP_GET) == 0);
+    CU_ASSERT(find_route(&routes, "/path/to/api1", HTTP_GET) != 0);
+    CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_GET) != 0);
+    CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_POST) == 0);
+}
+
 int main() {
     if (CUE_SUCCESS != CU_initialize_registry()) {
         return CU_get_error();
@@ -152,6 +187,10 @@ int main() {
         return CU_get_error();
     }
     if (NULL == CU_add_test(suite, "test of url_path_cmp", test_url_path_cmp)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of find_route", test_find_route)) {
         CU_cleanup_registry();
         return CU_get_error();
     }
