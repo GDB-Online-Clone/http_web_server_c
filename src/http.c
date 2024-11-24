@@ -375,6 +375,26 @@ void free_query_parameters(struct http_query_parameters* query_parameters) {
     query_parameters->size = 0;
 }
 
+int init_http_response(
+    struct http_response    *response,
+    enum http_status_code   status_code,
+    struct http_headers     headers,
+    enum http_version       version,
+    char                    *body
+) {
+    // 응답 구조체가 NULL이면 실패
+    if (response == NULL) {
+        return -1;
+    }
+
+    response->status_code = status_code;
+    response->headers = headers;
+    response->http_version = version;
+    response->body = body ? strdup(body) : NULL;
+
+    return 0; // 성공
+}
+
 enum http_method parse_http_method(const char *method) {
     if (strcmp(method, "GET") == 0) return HTTP_GET;
     if (strcmp(method, "POST") == 0) return HTTP_POST;

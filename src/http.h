@@ -207,6 +207,16 @@ struct http_query_parameter* find_query_parameter(char* key);
 */
 void free_query_parameters(struct http_query_parameters* query_parameters);
 
+/**
+ * @brief Initializes an HTTP response with the specified status code, headers, version, and body.
+ */
+int init_http_response(
+    struct http_response    *response,
+    enum http_status_code   status_code,
+    struct http_headers     headers,
+    enum http_version       version,
+    char                    *body
+);
 
 char* http_response_stringify(struct http_response http_response);
 
