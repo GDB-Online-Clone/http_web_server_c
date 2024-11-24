@@ -806,11 +806,19 @@ int run_web_server(struct web_server server){
             close(new_socket);
             continue;
             close(client_socket);
+    
+        request = parse_http_request(buffer);
+
+
+        // 라우트 찾기
+        found_route = find_route(server.route_table, request.path, request.method);
 
             // 라우트를 찾지 못한 경우
-            if (!route_found) {
+        if (found_route == NULL) {
                 response.status_code = HTTP_NOT_FOUND;
-                response.body = "404 Not Found";
+            response.body = NULL;
+        } else {
+            response = found_route->callback(request);
             }
 
             // HTTP 응답 생성
