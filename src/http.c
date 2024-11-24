@@ -782,8 +782,8 @@ int run_web_server(struct web_server server){
         return -1;
     }
 
-    // 서버 실행 메시지 출력으로 나중에 삭제 가능
-    printf("Server is running on port %d\n", server.port_num);  
+
+    DLOGV("[Server] port: %d, backlog: %d\n", server.port_num, server.backlog);  
 
     while (1) {
         int     client_socket;
