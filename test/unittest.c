@@ -226,6 +226,89 @@ void test_find_route() {
     CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_POST) == 0);
 }
 
+// 테스트용 콜백 함수
+struct http_response test_callback(struct http_request request) {
+    struct http_headers headers = {};
+    return (struct http_response) {
+        .body = "test response",
+        .headers = headers,
+        .http_version = HTTP_1_1,
+        .status_code = HTTP_OK
+    };
+}
+
+/**
+ * @brief Tests server initialization with valid configuration
+ * Tests if server initializes correctly with valid port and route table
+ */
+void test_web_server_init() {
+    struct routes routes;
+    init_routes(&routes);
+    insert_route(&routes, "/test", HTTP_GET, test_callback);
+    
+    struct web_server server = {
+        .route_table = &routes,
+        .port_num = 8080,
+        .status_code = HTTP_OK,
+        .body = NULL
+    };
+    
+    int result = run_web_server(server);
+    
+    // Server should start successfully
+    CU_ASSERT(result == 0);
+    
+    // Cleanup
+    free(routes.items);
+}
+
+/**
+ * @brief Tests server initialization with invalid port
+ * Tests if server handles invalid port numbers correctly
+ */
+void test_web_server_invalid_port() {
+    struct routes routes;
+    init_routes(&routes);
+    
+    struct web_server server = {
+        .route_table = &routes,
+        .port_num = -1,  // Invalid port number
+        .status_code = HTTP_OK,
+        .body = NULL
+    };
+    
+    int result = run_web_server(server);
+    
+    // Server should fail to start with invalid port
+    CU_ASSERT(result == -1);
+    
+    // Cleanup
+    free(routes.items);
+}
+
+/**
+ * @brief Tests server with empty route table
+ * Tests if server handles empty route table correctly
+ */
+void test_web_server_empty_routes() {
+    struct routes routes = {
+        .size = 0,
+        .capacity = 0,
+        .items = NULL
+    };
+    
+    struct web_server server = {
+        .route_table = &routes,
+        .port_num = 8080,
+        .status_code = HTTP_OK,
+        .body = NULL
+    };
+    
+    int result = run_web_server(server);
+    
+    // Server should start but return -1 due to empty route table
+    CU_ASSERT(result == -1);
+}
 
 int main() {
     if (CUE_SUCCESS != CU_initialize_registry()) {
@@ -265,6 +348,19 @@ int main() {
         return CU_get_error();
     }
     if (NULL == CU_add_test(suite, "test of find_route", test_find_route)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+
+    if (NULL == CU_add_test(suite, "test of web server initialization", test_web_server_init)) {
+    CU_cleanup_registry();
+    return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of web server with invalid port", test_web_server_invalid_port)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of web server with empty routes", test_web_server_empty_routes)) {
         CU_cleanup_registry();
         return CU_get_error();
     }
