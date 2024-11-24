@@ -786,11 +786,9 @@ int run_web_server(struct web_server server){
     printf("Server is running on port %d\n", server.port_num);  
 
     while (1) {
-        int new_socket;  // 새로운 클라이언트 소켓
+        int     client_socket;
 
-        // 연결 수락
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
-            perror("accept");  // 연결 수락 실패 시 에러 출력
+        if ((client_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
             close(server_fd);
             return -1;
         }
@@ -799,40 +797,15 @@ int run_web_server(struct web_server server){
         ssize_t bytes_read = read(new_socket, buffer, BUF_SIZE);
 
         if (bytes_read < 0) {
-            perror("read");  // 읽기 실패 시 에러 출력
-            close(new_socket);
+            perror("read");
+            close(client_socket);
             close(server_fd);
             return -1;
         } else if (bytes_read == 0) {
             printf("Client disconnected\n");  // 클라이언트가 연결을 끊었을 때 메시지 출력
             close(new_socket);
             continue;
-        } else {
-            // HTTP 요청 파싱
-            struct http_request request = parse_http_request(buffer);
-
-            // 응답 생성을 위한 기본값 설정
-            struct http_response response = {
-                .status_code = HTTP_NOT_FOUND,  // 기본값으로 404 설정
-                .http_version = request.version,
-                .body = NULL
-            };
-
-            // 라우트 찾기
-            int route_found = 0;
-            for (int i = 0; i < server.route_table->size; i++) {
-                struct route *current_route = &server.route_table->items[i];
-
-                if ((strcmp(current_route->path, request.path) == 0)
-                    && (current_route->method == request.method)) {
-                    // 매칭되는 라우트를 찾음
-                    route_found = 1;
-
-                    // 콜백 함수 실행
-                    response = current_route->callback(request);
-                    break;
-                }
-            }
+            close(client_socket);
 
             // 라우트를 찾지 못한 경우
             if (!route_found) {
@@ -844,7 +817,7 @@ int run_web_server(struct web_server server){
             char *response_str = http_response_stringify(response);
 
             // 클라이언트에 응답 전송
-            write(new_socket, response_str, strlen(response_str));
+            write(client_socket, response_str, strlen(response_str));
 
             // 메모리 정리
             free(response_str);
@@ -858,8 +831,7 @@ int run_web_server(struct web_server server){
                 free(request.path);
             }
 
-            close(new_socket);  // 클라이언트 소켓 닫기
-        }
+        close(client_socket);  // 클라이언트 소켓 닫기
     }
 
     close(server_fd);  // 서버 소켓 닫기
