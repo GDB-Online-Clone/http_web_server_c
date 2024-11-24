@@ -749,10 +749,18 @@ struct http_request parse_http_request(const char *request) {
 }
 
 int run_web_server(struct web_server server){
-    int server_fd;  // 서버 소켓 파일 디스크립터
-    struct sockaddr_in addr;  // 서버 주소 구조체
-    int addrlen = sizeof(addr);  // 주소 길이
-    char buffer[BUF_SIZE] = {0};  // 클라이언트로부터 읽을 버퍼
+    const size_t KB = 1024;
+
+    struct sockaddr_in addr;
+    
+    int                     server_fd;
+    int                     addrlen = sizeof(addr);
+    int                     buffer_size_kb = 16;
+    char                    *buffer = (char *)malloc(buffer_size_kb * 1024);
+    struct http_request     request;
+    struct route            *found_route;
+
+    struct http_response    response = {};
 
     // 소켓 생성
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
