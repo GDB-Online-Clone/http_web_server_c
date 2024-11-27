@@ -10,7 +10,7 @@ static struct http_response *hello_world(struct http_request request) {
     
     response->http_version = HTTP_1_1;
     response->status_code = HTTP_OK;
-    response->body = "Hello, World!";
+    response->body = strdup("Hello, World!");
     response->headers = (struct http_headers) {
         .size = 0,
         .capacity = 0,
@@ -48,7 +48,7 @@ static struct http_response *mirror(struct http_request request) {
     
     response->http_version = HTTP_1_1;
     response->status_code = HTTP_OK;
-    response->body = request.body;
+    response->body = strdup(request.body);
     response->headers = (struct http_headers) {
         .size = 0,
         .capacity = 0,
