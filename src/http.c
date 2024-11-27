@@ -491,6 +491,20 @@ void free_query_parameters(struct http_query_parameters* query_parameters) {
     query_parameters->size = 0;
 }
 
+struct http_query_parameter* find_query_parameter(struct http_query_parameters* query_parameters, char* param_key) {
+    if (!query_parameters || !param_key) {
+        return NULL;
+    }
+
+    for (int i = 0; i < query_parameters->size; i++) {
+        if ((query_parameters->items[i]->key != NULL) && (strcmp(query_parameters->items[i]->key, param_key) == 0)) {
+            return query_parameters->items[i];
+        }
+    }
+
+    return NULL;
+}
+
 int init_http_response(
     struct http_response    *response,
     enum http_status_code   status_code,

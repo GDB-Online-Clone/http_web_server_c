@@ -231,7 +231,18 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
  */
 struct http_query_parameters parse_query_parameters(char* parameters_string);
 
-struct http_query_parameter* find_query_parameter(char* key);
+/**
+ * @brief Finds a query parameter by its key.
+ *
+ * This function searches through the provided list of query parameters
+ * and returns the parameter that matches the given key.
+ *
+ * @param query_parameters A pointer to the list of query parameters.
+ * @param param_key The key of the query parameter to find.
+ * @return A pointer to the found query parameter, or NULL if not found
+ *         or if either input parameter is NULL.
+ */
+struct http_query_parameter* find_query_parameter(struct http_query_parameters* query_parameters, char* param_key);
 
 /**
 * @brief Deallocates all memory associated with query parameters
