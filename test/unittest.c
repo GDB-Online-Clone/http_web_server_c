@@ -153,14 +153,16 @@ void test_url_path_cmp() {
     CU_ASSERT(url_path_cmp(path, diff_path) != 0);
 }
 
-struct http_response empty_callback(struct http_request request) {
-    struct http_headers headers = {};
-    return (struct http_response) {
+struct http_response *empty_callback(struct http_request request) {
+    struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
+    struct http_headers headers = {};    
+    *response = (struct http_response) {
         .body = "hello",
         .headers = headers,
         .http_version = HTTP_1_0,
         .status_code = HTTP_OK
     };
+    return response;
 }
 
 /**
@@ -182,7 +184,7 @@ void test_insert_route() {
     insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
     CU_ASSERT_STRING_EQUAL(routes.items[0]->path, "/path/to/api");
     CU_ASSERT(routes.size == 1);    
-    CU_ASSERT_STRING_EQUAL(routes.items[0]->callback(request_temp).body, "hello");
+    CU_ASSERT_STRING_EQUAL(routes.items[0]->callback(request_temp)->body, "hello");
     CU_ASSERT(routes.items[0]->method == HTTP_GET);
 
     insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
@@ -195,7 +197,7 @@ void test_insert_route() {
         CU_ASSERT_STRING_EQUAL(routes.items[i]->path, path);
         CU_ASSERT(routes.size == i + 1);    
         CU_ASSERT(routes.size <= routes.capacity); 
-        CU_ASSERT_STRING_EQUAL(routes.items[i]->callback(request_temp).body, "hello");
+        CU_ASSERT_STRING_EQUAL(routes.items[i]->callback(request_temp)->body, "hello");
         CU_ASSERT(routes.items[i]->method == HTTP_GET);
     }
 }

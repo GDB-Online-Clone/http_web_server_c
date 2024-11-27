@@ -5,13 +5,13 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-static struct http_response hello_world(struct http_request request) {
-    struct http_response response;
+static struct http_response *hello_world(struct http_request request) {
+    struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
     
-    response.http_version = HTTP_1_1;
-    response.status_code = HTTP_OK;
-    response.body = "Hello, World!";
-    response.headers = (struct http_headers) {
+    response->http_version = HTTP_1_1;
+    response->status_code = HTTP_OK;
+    response->body = "Hello, World!";
+    response->headers = (struct http_headers) {
         .size = 0,
         .capacity = 0,
         .items = NULL
@@ -20,20 +20,20 @@ static struct http_response hello_world(struct http_request request) {
     return response;
 }
 
-static struct http_response find_words(struct http_request request) {
-    struct http_response response;
+static struct http_response *find_words(struct http_request request) {
+    struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
     char *found = request.body;
     int cnt = 0;
     while ((found = strstr(found, "aaba"))) {
         cnt++;
     }
 
-    response.http_version = HTTP_1_1;
-    response.status_code = HTTP_OK;
+    response->http_version = HTTP_1_1;
+    response->status_code = HTTP_OK;
     char *buf = malloc(1024);
     sprintf(buf, "%d\n", cnt);
-    response.body = buf;
-    response.headers = (struct http_headers) {
+    response->body = buf;
+    response->headers = (struct http_headers) {
         .size = 0,
         .capacity = 0,
         .items = NULL
@@ -42,14 +42,14 @@ static struct http_response find_words(struct http_request request) {
     return response;
 }
 
-static struct http_response mirror(struct http_request request) {
-    struct http_response response;
+static struct http_response *mirror(struct http_request request) {
+    struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
     char *found = request.body;
     
-    response.http_version = HTTP_1_1;
-    response.status_code = HTTP_OK;
-    response.body = request.body;
-    response.headers = (struct http_headers) {
+    response->http_version = HTTP_1_1;
+    response->status_code = HTTP_OK;
+    response->body = request.body;
+    response->headers = (struct http_headers) {
         .size = 0,
         .capacity = 0,
         .items = NULL
