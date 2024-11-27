@@ -87,7 +87,7 @@ int init_http_request(
 /**
  * @brief Parse an HTTP request string into a struct http_request.
  */
-struct http_request parse_http_request(const char *request);
+struct http_request *parse_http_request(const char *request);
 
 /**
  * @brief Parse the HTTP method string and return its enum representation.

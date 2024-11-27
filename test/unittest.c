@@ -104,7 +104,7 @@ void test_parse_http_request_1() {
         "Accept: text/html\r\n"
         "\r\n";    
 
-    struct http_request request = parse_http_request(http_request);
+    struct http_request request = *parse_http_request(http_request);
 
     CU_ASSERT(request.method    == HTTP_GET);
     CU_ASSERT(request.version   == HTTP_1_1);
@@ -178,7 +178,7 @@ void test_insert_route() {
             "GET /path/to/api HTTP/1.1\r\n"
             "Host: www.example.com\r\n"
             "\r\n";
-    struct http_request request_temp = parse_http_request(http_request_string);
+    struct http_request request_temp = *parse_http_request(http_request_string);
 
     init_routes(&routes);
     insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);

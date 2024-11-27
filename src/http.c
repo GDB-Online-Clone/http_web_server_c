@@ -674,12 +674,12 @@ int init_http_request(
     return 0; // 성공
 }
 
-struct http_request parse_http_request(const char *request) {
-    struct http_request http_request;    
+struct http_request *parse_http_request(const char *request) {
+    struct http_request *http_request = (struct http_request *)malloc(sizeof(struct http_request));
     struct http_headers http_headers = {};
     struct http_query_parameters http_query_parameters = {};
 
-    memset(&http_request, 0, sizeof(struct http_request));
+    memset(http_request, 0, sizeof(struct http_request));
 
     char *request_buffer = strdup(request);
     char *request_line = strtok(request_buffer, "\r\n");
@@ -749,7 +749,7 @@ struct http_request parse_http_request(const char *request) {
 
     // Http Request 초기화
     init_http_request(
-        &http_request, 
+        http_request, 
         http_headers, 
         parsed_method,
         parsed_version, 
@@ -835,9 +835,7 @@ int run_web_server(struct web_server server) {
     DLOGV("[Server] port: %d, backlog: %d\n", server.port_num, server.backlog);  
 
     while (1) {
-        int     client_socket;
-        ssize_t bytes_read;
-        ssize_t total_read;
+        struct http_request     *request;
 
         if ((client_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
             perror("accept");
@@ -906,15 +904,9 @@ int run_web_server(struct web_server server) {
         // 메모리 정리
         free(response_str);
 
-        // @TODO destruct_http_request: START => 하나로 묶는 함수 만들기
-        destruct_http_headers(&request.headers);
-        free_query_parameters(&request.query_parameters);
-
-        if (request.body){
-            free(request.body);
-        }
-        if (request.path){ 
-            free(request.path);
+        if (request) {
+            destruct_http_request(request);
+            free(request);
         }
         // @TODO destruct_http_request: END
         close(client_socket);  // 클라이언트 소켓 닫기        
