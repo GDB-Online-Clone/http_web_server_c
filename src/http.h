@@ -122,6 +122,13 @@ char* http_status_code_stringify(const enum http_status_code code);
 void destruct_http_headers(struct http_headers *headers);
 
 /**
+ * @brief Cleanup `struct http_request` instance.
+ * 
+ * @param request target to cleanup
+ */
+void destruct_http_request(struct http_request *request);
+
+/**
  * @brief Parses the key and value from a substring of HTTP headers and returns a struct http_header*, allocated with malloc.
  * 
  * @param header_string An HTTP header string to parse, separated by CRLF
