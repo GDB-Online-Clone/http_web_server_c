@@ -110,22 +110,37 @@ void test_parse_http_request_1() {
     CU_ASSERT(request.version   == HTTP_1_1);
     // CU_ASSERT(request.body      == ?);    
     
-    CU_ASSERT_STRING_EQUAL(request.path, "/search?q=example&lang=en");
+    CU_ASSERT_STRING_EQUAL(request.path, "/search");
     
     CU_ASSERT_STRING_EQUAL(request.headers.items[0]->key,     "Host");
     CU_ASSERT_STRING_EQUAL(request.headers.items[0]->value,   "www.example.com");
 
-    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->key,     "User-Agent");
-    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->value,   "TestClient/1.0");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[1]->key,     "User-Agent");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[1]->value,   "TestClient/1.0");
 
-    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->key,     "Accept");
-    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->value,   "text/html");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[2]->key,     "Accept");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[2]->value,   "text/html");
 
     CU_ASSERT_STRING_EQUAL(request.query_parameters.items[0]->key,     "q");
     CU_ASSERT_STRING_EQUAL(request.query_parameters.items[0]->value,   "example");
 
     CU_ASSERT_STRING_EQUAL(request.query_parameters.items[1]->key,     "lang");
     CU_ASSERT_STRING_EQUAL(request.query_parameters.items[1]->value,   "en");
+
+    // char *http_request_no_headers = "GET /search HTTP/1.1\r\n\r\n";
+
+    // request = parse_http_request(http_request_no_headers);
+    // CU_ASSERT(request.method == HTTP_GET);
+    // CU_ASSERT(request.version == HTTP_1_1);
+
+
+    // char *http_request_invalid = "GET /search?q=example&lang=en HTTP/1.1\r\n";
+    // printf("not good\n");
+    // request = parse_http_request(http_request_invalid);    
+
+    // char *http_request_invalid_2 = "GET /search?q=example&lang=en HTTP/1.1";
+    // printf("not good2\n");
+    // request = parse_http_request(http_request_invalid_2);
 }
 
 /**
@@ -261,6 +276,10 @@ int main() {
         CU_cleanup_registry();
         return CU_get_error();
     }
+    if (NULL == CU_add_test(suite, "test of parse_http_request", test_parse_http_request_1)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    } 
     if (NULL == CU_add_test(suite, "test of find_header", test_find_header)) {
         CU_cleanup_registry();
         return CU_get_error();
