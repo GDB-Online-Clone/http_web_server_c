@@ -681,19 +681,45 @@ struct http_request *parse_http_request(const char *request) {
     memset(http_request, 0, sizeof(struct http_request));
 
     char *request_buffer = strdup(request);
-    char *request_line = strtok(request_buffer, "\r\n");
+    const char *header_start;
+    
+    /* end of http start line */
+    char *request_line = strstr(request_buffer, "\r\n");
+    if (request_line == NULL) {
+        free(http_request);
+        return NULL;
+    }
+    *request_line = '\0';
+    header_start = request + (int)(request_line - request_buffer);
 
-    // 요청 라인을 파싱 (예: "GET /path HTTP/1.1")
-    char *method = strtok(request_line, " ");     
-    char *path_with_query = strtok(NULL, " ");        
-    char *version = strtok(NULL, " ");
+    char *method = request_buffer;     
+    if (!method) {
+        free(http_request);
+        return NULL;
+    }
+    char *path_with_query = strstr(request_buffer, " ");    
+    if (!path_with_query) {
+        free(http_request);
+        return NULL;
+    }
+    *path_with_query = '\0';
+    path_with_query++;
+
+    char *version = strstr(path_with_query, " ");
+    if (!version) {
+        free(http_request);
+        return NULL;
+    }
+    *version = '\0';
+    version++;
+
 
     enum http_method parsed_method = parse_http_method(method);
     enum http_version parsed_version = parse_http_version(version);
 
     // 경로와 쿼리 파라미터 분리
     char *query = NULL;
-    char *query_start = strchr(path_with_query, '?');
+    char *query_start = strchr(path_with_query + 1, '?');
 
     if (query_start) {
         *query_start = '\0'; // '?'를 '\0'으로 변경하여 경로와 쿼리 분리
@@ -706,12 +732,14 @@ struct http_request *parse_http_request(const char *request) {
     char *header = NULL;
     char *body = NULL;
 
-    char *header_start = strstr(request, "\r\n");
-
     if (header_start) {
         header_start += 2; // "\r\n" 건너뛰기
         char *body_start = strstr(header_start, "\r\n\r\n");
-        
+        if (!body_start) {
+            free(http_request);
+            return NULL;
+        }
+
         size_t header_len = body_start - header_start + 2;
         header = malloc(header_len + 1);
 
