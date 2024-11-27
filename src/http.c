@@ -122,6 +122,19 @@ void destruct_http_headers(struct http_headers *headers) {
     headers->size = 0;
 }
 
+void destruct_http_request(struct http_request *request) {
+    if (request->body)
+        free(request->body);
+
+    if (request->headers.capacity)
+        destruct_http_headers(&request->headers);
+
+    if (request->path)
+        free(request->path);
+
+    free_query_parameters(&request->query_parameters);    
+}
+
 struct http_header *parse_http_header(char *header_string) {
 
     char *end_of_header = strstr(header_string, "\r\n");
