@@ -836,35 +836,34 @@ int run_web_server(struct web_server server){
     
         request = parse_http_request(buffer);
 
-
         // 라우트 찾기
         found_route = find_route(server.route_table, request.path, request.method);
 
-            // 라우트를 찾지 못한 경우
+        // 라우트를 찾지 못한 경우
         if (found_route == NULL) {
-                response.status_code = HTTP_NOT_FOUND;
+            response.status_code = HTTP_NOT_FOUND;
             response.body = NULL;
         } else {
             response = found_route->callback(request);
-            }
+        }
 
-            // HTTP 응답 생성
-            char *response_str = http_response_stringify(response);
+        // HTTP 응답 생성
+        char *response_str = http_response_stringify(response);
 
-            // 클라이언트에 응답 전송
-            write(client_socket, response_str, strlen(response_str));
+        // 클라이언트에 응답 전송
+        write(client_socket, response_str, strlen(response_str));
 
-            // 메모리 정리
-            free(response_str);
-            destruct_http_headers(&request.headers);
-            free_query_parameters(&request.query_parameters);
+        // 메모리 정리
+        free(response_str);
+        destruct_http_headers(&request.headers);
+        free_query_parameters(&request.query_parameters);
 
-            if (request.body){
-                free(request.body);
-            }
-            if (request.path){ 
-                free(request.path);
-            }
+        if (request.body){
+            free(request.body);
+        }
+        if (request.path){ 
+            free(request.path);
+        }
 
         close(client_socket);  // 클라이언트 소켓 닫기
     }
