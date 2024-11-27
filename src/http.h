@@ -63,7 +63,7 @@ struct routes* insert_route(
 		struct routes       *route_table,
 		const char          *path,
 		enum http_method    method,
-		struct http_response(*callback)(struct http_request request)
+		struct http_response *(*callback)(struct http_request request)
 );
 
 /**
@@ -358,10 +358,10 @@ struct route {
      */
     enum http_method method;
     /**
-     * @brief callback function performed when http request received
-     * 
+     * @brief callback function performed when http request received. Callback function need to return a `struct http_response` pointer
+     * allocated by `malloc`.
      */
-    struct http_response (*callback)(struct http_request request);
+    struct http_response *(*callback)(struct http_request request);
 };
 
 

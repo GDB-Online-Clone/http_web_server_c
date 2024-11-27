@@ -23,7 +23,7 @@ struct routes* insert_route(
 		struct routes       *route_table,
 		const char          *path,
 		enum http_method    method,
-		struct http_response(*callback)(struct http_request request)
+		struct http_response *(*callback)(struct http_request request)
 ) {
     if (path[0] != '/')
         return NULL;
@@ -769,7 +769,7 @@ int run_web_server(struct web_server server) {
     // @TODO http_response 포인터 . => callback 이 NULL 반환하는 지 체크
     // @TODO response = init_http_response 호출 해서 404 => 
     // @TODO while문 안으로. / 메모리 초기화는 run_web_server 에서 별도로.
-    struct http_response    response = {};
+    struct http_response    *response = NULL;
 
     // @TODO 이건 while문 밖으로
     // struct http_response    *error_response;
@@ -870,17 +870,19 @@ int run_web_server(struct web_server server) {
         // 라우트를 찾지 못한 경우
         //@TODO if문만 삭제 => defalut reaponse 가 있으니.
         if (found_route == NULL) {
-            response.status_code = HTTP_NOT_FOUND;
-            response.body = NULL;
+            response = (struct http_response *)malloc(sizeof(struct http_response));
+            response->status_code = HTTP_NOT_FOUND;
+            response->body = NULL;
         } else {
             // @TODO 
             response = found_route->callback(request);
         }
 
         // HTTP 응답 생성
-        char *response_str = http_response_stringify(response);
+        char *response_str = http_response_stringify(*response);
         // if (response == error_response || repoons)
         // @TODO free(response) 추가(조건문 callback-response가 null이 아닐 때만 free)
+        free(response);
 
         // 클라이언트에 응답 전송
         write(client_socket, response_str, strlen(response_str));
