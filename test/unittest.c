@@ -127,20 +127,11 @@ void test_parse_http_request_1() {
     CU_ASSERT_STRING_EQUAL(request.query_parameters.items[1]->key,     "lang");
     CU_ASSERT_STRING_EQUAL(request.query_parameters.items[1]->value,   "en");
 
-    // char *http_request_no_headers = "GET /search HTTP/1.1\r\n\r\n";
+    char *http_request_no_headers = "GET /search HTTP/1.1\r\n\r\n";
+    parse_http_request(http_request_no_headers);
 
-    // request = parse_http_request(http_request_no_headers);
-    // CU_ASSERT(request.method == HTTP_GET);
-    // CU_ASSERT(request.version == HTTP_1_1);
-
-
-    // char *http_request_invalid = "GET /search?q=example&lang=en HTTP/1.1\r\n";
-    // printf("not good\n");
-    // request = parse_http_request(http_request_invalid);    
-
-    // char *http_request_invalid_2 = "GET /search?q=example&lang=en HTTP/1.1";
-    // printf("not good2\n");
-    // request = parse_http_request(http_request_invalid_2);
+    char *http_request_ilformed = "INVALID REQUEST\r\n\r\n";
+    parse_http_request(http_request_ilformed);
 }
 
 /**
