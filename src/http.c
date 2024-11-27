@@ -768,7 +768,7 @@ struct http_request parse_http_request(const char *request) {
     return http_request;
 }
 
-int run_web_server(struct web_server server){
+int run_web_server(struct web_server server) {
     const size_t KB = 1024;
 
     struct sockaddr_in addr;
@@ -776,21 +776,41 @@ int run_web_server(struct web_server server){
     int                     server_fd;
     int                     addrlen = sizeof(addr);
     int                     buffer_size_kb = 16;
-    char                    *buffer = (char *)malloc(buffer_size_kb * 1024);
+    char                    *buffer = NULL;
     struct http_request     request;
     struct route            *found_route;
 
+    // @TODO http_response 포인터 . => callback 이 NULL 반환하는 지 체크
+    // @TODO response = init_http_response 호출 해서 404 => 
+    // @TODO while문 안으로. / 메모리 초기화는 run_web_server 에서 별도로.
     struct http_response    response = {};
+
+    // @TODO 이건 while문 밖으로
+    // struct http_response    *error_response;
+    // struct http_response    *not_found_response;
+
+    // 버퍼 할당
+    buffer = (char *)malloc(buffer_size_kb * KB);
+    if (!buffer) {
+        DLOGV("Failed to allocate buffer memory");
+        return errno;
+    }
 
     // 소켓 생성
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("socket"); 
+        free(buffer);
         return errno;
     }
 
     // 소켓 재사용 옵션 설정
     int opt = 1;
-    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
+        DLOGV("setsockopt failed: %s", strerror(errno)); 
+        close(server_fd);
+        free(buffer);
+        return errno;
+    }
 
     // 소켓 설정
     addr.sin_family = AF_INET;  // IPv4
@@ -821,54 +841,70 @@ int run_web_server(struct web_server server){
 
         if ((client_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
             perror("accept");
-            close(server_fd);
-            // TODO(server log print)
-            continue;
+            // @TODO server log print
+            DLOGV("Failed to accept client socket: %s", strerror(errno));
+            continue; // 이 부분은 그대로
         }
 
         // 수신 버퍼 초기화
-        memset(buffer, 0, buffer_size_kb * 1024);
+        memset(buffer, 0, buffer_size_kb * KB);
 
+        // 강의자료에 있는 while 문 read 참고해서 구현 : START
         total_read = 0;
-        bytes_read = read(client_socket, buffer, (size_t)1024 * buffer_size_kb - 1);
+        bytes_read = read(client_socket, buffer, (size_t)KB * buffer_size_kb - 1);
         total_read += bytes_read;
+        // 강의자료에 있는 while 문 read 참고해서 구현 : END
 
-        if (bytes_read < 0) {
+
+        // @TODO 에러 핸들링 필요(continue) => 500 응답 : START
+        if (total_read < 0) {
             perror("read");
             close(client_socket);
-            close(server_fd);
-            // TODO(server log print)
-            continue;
-}
+            free(buffer);
+            // @TODO server log print
+            DLOGV("Socket read error: %s", strerror(errno));
+            continue; 
+        }
         
         if (total_read == 0) {
-            printf("Client disconnected\n"); 
+            perror("read");
             close(client_socket);
             // TODO(server log print)
+            DLOGV("Client disconnected - socket=%d", client_socket); 
             continue;
         } 
-    
+        // @TODO 에러 핸들링 필요(continue) => 500 응답 : END
+        
+        // @TODO parse_http_request 반환 값을 포인터로 변경
         request = parse_http_request(buffer);
 
         // 라우트 찾기
         found_route = find_route(server.route_table, request.path, request.method);
 
         // 라우트를 찾지 못한 경우
+        //@TODO if문만 삭제 => defalut reaponse 가 있으니.
         if (found_route == NULL) {
             response.status_code = HTTP_NOT_FOUND;
             response.body = NULL;
         } else {
+            // @TODO 
             response = found_route->callback(request);
         }
 
         // HTTP 응답 생성
         char *response_str = http_response_stringify(response);
+        // if (response == error_response || repoons)
+        // @TODO free(response) 추가(조건문 callback-response가 null이 아닐 때만 free)
 
         // 클라이언트에 응답 전송
         write(client_socket, response_str, strlen(response_str));
+        // @TODO 에러 시 서버 로그 추가
+        // @TODO 로깅 함수 utilty에 추가
 
         // 메모리 정리
         free(response_str);
+
+        // @TODO destruct_http_request: START => 하나로 묶는 함수 만들기
         destruct_http_headers(&request.headers);
         free_query_parameters(&request.query_parameters);
 
@@ -878,10 +914,11 @@ int run_web_server(struct web_server server){
         if (request.path){ 
             free(request.path);
         }
-
-        close(client_socket);  // 클라이언트 소켓 닫기
+        // @TODO destruct_http_request: END
+        close(client_socket);  // 클라이언트 소켓 닫기        
     }
 
+    free(buffer);  // 버퍼 메모리 해제
     close(server_fd);  // 서버 소켓 닫기
     return 0;
 }
