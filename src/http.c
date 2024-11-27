@@ -776,17 +776,31 @@ int run_web_server(struct web_server server) {
     int                     addrlen = sizeof(addr);
     int                     buffer_size_kb = 16;
     char                    *buffer = NULL;
-    struct http_request     request;
-    struct route            *found_route;
 
-    // @TODO http_response 포인터 . => callback 이 NULL 반환하는 지 체크
-    // @TODO response = init_http_response 호출 해서 404 => 
-    // @TODO while문 안으로. / 메모리 초기화는 run_web_server 에서 별도로.
-    struct http_response    *response = NULL;
+    struct http_response    response_500;
+    struct http_response    response_404;
 
-    // @TODO 이건 while문 밖으로
-    // struct http_response    *error_response;
-    // struct http_response    *not_found_response;
+    response_500 = (struct http_response) {
+        .body = NULL,
+        .headers = (struct http_headers) {
+            .capacity = 0,
+            .items = NULL,
+            .size = 0
+        },
+        .http_version = HTTP_1_1,
+        .status_code = HTTP_INTERNAL_SERVER_ERROR
+    };
+
+    response_404 = (struct http_response) {
+        .body = NULL,
+        .headers = (struct http_headers) {
+            .capacity = 0,
+            .items = NULL,
+            .size = 0
+        },
+        .http_version = HTTP_1_1,
+        .status_code = HTTP_NOT_FOUND
+    };
 
     // 버퍼 할당
     buffer = (char *)malloc(buffer_size_kb * KB);
@@ -834,13 +848,19 @@ int run_web_server(struct web_server server) {
     DLOGV("[Server] port: %d, backlog: %d\n", server.port_num, server.backlog);  
 
     while (1) {
+        struct route            *found_route;
+        struct http_response    *response = NULL;
         struct http_request     *request;
+        char                    *response_str;
+        int                     client_socket;
+        ssize_t                 bytes_read;
+        ssize_t                 total_read;
 
         if ((client_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
             perror("accept");
             // @TODO server log print
             DLOGV("Failed to accept client socket: %s", strerror(errno));
-            continue; // 이 부분은 그대로
+            continue;
         }
 
         // 수신 버퍼 초기화
@@ -853,14 +873,14 @@ int run_web_server(struct web_server server) {
         // 강의자료에 있는 while 문 read 참고해서 구현 : END
 
 
-        // @TODO 에러 핸들링 필요(continue) => 500 응답 : START
         if (total_read < 0) {
             perror("read");
             close(client_socket);
             free(buffer);
             // @TODO server log print
             DLOGV("Socket read error: %s", strerror(errno));
-            continue; 
+            response = &response_500;
+            goto label_send_response;
         }
         
         if (total_read == 0) {
@@ -868,32 +888,46 @@ int run_web_server(struct web_server server) {
             close(client_socket);
             // TODO(server log print)
             DLOGV("Client disconnected - socket=%d", client_socket); 
-            continue;
+            response = &response_500;
+            goto label_send_response;
         } 
-        // @TODO 에러 핸들링 필요(continue) => 500 응답 : END
         
         // @TODO parse_http_request 반환 값을 포인터로 변경
         request = parse_http_request(buffer);
 
-        // 라우트 찾기
-        found_route = find_route(server.route_table, request.path, request.method);
-
-        // 라우트를 찾지 못한 경우
-        //@TODO if문만 삭제 => defalut reaponse 가 있으니.
-        if (found_route == NULL) {
-            response = (struct http_response *)malloc(sizeof(struct http_response));
-            response->status_code = HTTP_NOT_FOUND;
-            response->body = NULL;
-        } else {
-            // @TODO 
-            response = found_route->callback(request);
+        if (request == NULL) {
+            response = &response_500;
+            goto label_send_response;
         }
 
-        // HTTP 응답 생성
-        char *response_str = http_response_stringify(*response);
-        // if (response == error_response || repoons)
-        // @TODO free(response) 추가(조건문 callback-response가 null이 아닐 때만 free)
-        free(response);
+        // 라우트 찾기
+        found_route = find_route(server.route_table, request->path, request->method);
+
+        if (found_route == NULL) {
+            response = &response_404;
+            goto label_send_response;
+        } 
+        
+        response = found_route->callback(*request);
+        
+        if (response == NULL) {
+            response = &response_500;
+            goto label_send_response;
+        }
+
+        label_send_response:
+        response_str = http_response_stringify(*response);
+
+        /* response 가 null 일 경우는 없다고 가정 */
+        if (response != &response_404 && response != &response_500) {
+            if (response->body)
+                free(response->body);
+
+            if (response->headers.capacity)
+                destruct_http_headers(&response->headers);
+
+            free(response);
+        }
 
         // 클라이언트에 응답 전송
         write(client_socket, response_str, strlen(response_str));
@@ -907,7 +941,6 @@ int run_web_server(struct web_server server) {
             destruct_http_request(request);
             free(request);
         }
-        // @TODO destruct_http_request: END
         close(client_socket);  // 클라이언트 소켓 닫기        
     }
 
