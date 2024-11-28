@@ -2,6 +2,12 @@
 #include <CUnit/Basic.h>
 #include <webserver/http.h>
 #include <webserver/utility.h>
+#include <pthread.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#define BUF_SIZE 1024
+
 // Setup 함수 - 유닛 테스트 환경 설정에 사용
 int setup(void) {
     // 필요에 따라 초기화 작업 추가
@@ -65,6 +71,27 @@ void test_parse_http_headers_2() {
 }
 
 /**
+ * @brief test for `find_header()`
+ * 
+ */
+void test_find_header() {
+    struct http_headers headers = (struct http_headers) {
+        .capacity = 8,
+        .items = (struct http_header **)malloc(8 * sizeof(int *)),
+        .size = 0
+    };
+
+    insert_header(&headers, "k1", "v1");
+    insert_header(&headers, "k2", "v2");
+    insert_header(&headers, "k3", "v3");
+    insert_header(&headers, "k4", "v4");
+
+    CU_ASSERT_STRING_EQUAL(find_header(&headers, "k1")->value, "v1");
+    CU_ASSERT_STRING_EQUAL(find_header(&headers, "k4")->value, "v4");
+    CU_ASSERT(find_header(&headers, "k0") == NULL);
+}
+
+/**
  * @brief parse_http_request() test code. Input need to be parsed successfully.
  * Input is GET method and has no body.
  * 
@@ -77,28 +104,145 @@ void test_parse_http_request_1() {
         "Accept: text/html\r\n"
         "\r\n";    
 
-    struct http_request request = parse_http_request(http_request);
+    struct http_request request = *parse_http_request(http_request);
 
     CU_ASSERT(request.method    == HTTP_GET);
     CU_ASSERT(request.version   == HTTP_1_1);
     // CU_ASSERT(request.body      == ?);    
     
-    CU_ASSERT_STRING_EQUAL(request.path, "/search?q=example&lang=en");
+    CU_ASSERT_STRING_EQUAL(request.path, "/search");
     
     CU_ASSERT_STRING_EQUAL(request.headers.items[0]->key,     "Host");
     CU_ASSERT_STRING_EQUAL(request.headers.items[0]->value,   "www.example.com");
 
-    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->key,     "User-Agent");
-    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->value,   "TestClient/1.0");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[1]->key,     "User-Agent");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[1]->value,   "TestClient/1.0");
 
-    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->key,     "Accept");
-    CU_ASSERT_STRING_EQUAL(request.headers.items[0]->value,   "text/html");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[2]->key,     "Accept");
+    CU_ASSERT_STRING_EQUAL(request.headers.items[2]->value,   "text/html");
 
     CU_ASSERT_STRING_EQUAL(request.query_parameters.items[0]->key,     "q");
     CU_ASSERT_STRING_EQUAL(request.query_parameters.items[0]->value,   "example");
 
     CU_ASSERT_STRING_EQUAL(request.query_parameters.items[1]->key,     "lang");
     CU_ASSERT_STRING_EQUAL(request.query_parameters.items[1]->value,   "en");
+
+    char *http_request_no_headers = "GET /search HTTP/1.1\r\n\r\n";
+    parse_http_request(http_request_no_headers);
+
+    char *http_request_ilformed = "INVALID REQUEST\r\n\r\n";
+    parse_http_request(http_request_ilformed);
+}
+
+/**
+ * @brief Test for `init_routes`. Test that members of routes are correctly set and allocated.
+ */
+void test_init_routes_1() {
+    struct routes routes;
+    routes.items = NULL;
+    init_routes(&routes);
+    CU_ASSERT(routes.size == 0);
+    CU_ASSERT(routes.capacity > 0);
+    /* Segment faults Test (or test some other faults) */    
+    CU_ASSERT(routes.items != NULL);
+    free(routes.items);
+}
+
+void test_url_path_cmp() {
+    char *path = "/path/to/api";
+    char *same_path1 = "/path/to/api/";
+    char *same_path2 = "/path/to/api";
+    char *diff_path = "/path/to/api1";
+
+    CU_ASSERT(url_path_cmp(path, same_path1) == 0);
+    CU_ASSERT(url_path_cmp(path, same_path2) == 0);
+    CU_ASSERT(url_path_cmp(path, diff_path) != 0);
+}
+
+struct http_response *empty_callback(struct http_request request) {
+    struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
+    struct http_headers headers = {};    
+    *response = (struct http_response) {
+        .body = "hello",
+        .headers = headers,
+        .http_version = HTTP_1_0,
+        .status_code = HTTP_OK
+    };
+    return response;
+}
+
+/**
+ * @brief Test for `insert_route`. Test that `routes` successfully stores the arguments which passed. 
+ *      This also contains a stress test for testing realloc.
+ * @warning **[Dependency of tests]**
+ * `init_routes`
+ * `parse_http_request`
+ */
+void test_insert_route() {
+    struct routes routes;    
+    char *http_request_string = 
+            "GET /path/to/api HTTP/1.1\r\n"
+            "Host: www.example.com\r\n"
+            "\r\n";
+    struct http_request request_temp = *parse_http_request(http_request_string);
+
+    init_routes(&routes);
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+    CU_ASSERT_STRING_EQUAL(routes.items[0]->path, "/path/to/api");
+    CU_ASSERT(routes.size == 1);    
+    CU_ASSERT_STRING_EQUAL(routes.items[0]->callback(request_temp)->body, "hello");
+    CU_ASSERT(routes.items[0]->method == HTTP_GET);
+
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+    CU_ASSERT(routes.size == 1);
+
+    for (int i = 1; i < 100; i++) {
+        char path[64];
+        sprintf(path, "/path/to/api%d", i);
+        insert_route(&routes, path, HTTP_GET, empty_callback);
+        CU_ASSERT_STRING_EQUAL(routes.items[i]->path, path);
+        CU_ASSERT(routes.size == i + 1);    
+        CU_ASSERT(routes.size <= routes.capacity); 
+        CU_ASSERT_STRING_EQUAL(routes.items[i]->callback(request_temp)->body, "hello");
+        CU_ASSERT(routes.items[i]->method == HTTP_GET);
+    }
+}
+
+/**
+ * @brief Test for `test_find_route`.
+ * @warning **[Dependency of tests]**   
+ * `init_routes`   
+ * `insert_route`   
+ * `url_path_cmp`   
+ */
+void test_find_route() {
+    struct routes routes;    
+
+    init_routes(&routes);
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+    insert_route(&routes, "/path/to/api", HTTP_GET, empty_callback);
+
+    for (int i = 1; i < 5; i++) {
+        char path[64];
+        sprintf(path, "/path/to/api%d", i);
+        insert_route(&routes, path, HTTP_GET, empty_callback);
+    }
+
+    CU_ASSERT(find_route(&routes, "/path/to/api0", HTTP_GET) == 0);
+    CU_ASSERT(find_route(&routes, "/path/to/api1", HTTP_GET) != 0);
+    CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_GET) != 0);
+    CU_ASSERT(find_route(&routes, "/path/to/api1/", HTTP_POST) == 0);
+}
+
+// 테스트용 콜백 함수
+struct http_response test_callback(struct http_request request) {
+    struct http_headers headers = {};
+    return (struct http_response) {
+        .body = "test response",
+        .headers = headers,
+        .http_version = HTTP_1_1,
+        .status_code = HTTP_OK
+    };
 }
 
 
@@ -120,6 +264,30 @@ int main() {
         return CU_get_error();
     }
     if (NULL == CU_add_test(suite, "test of parse_http_headers(): invalid headers", test_parse_http_headers_2)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of parse_http_request", test_parse_http_request_1)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    } 
+    if (NULL == CU_add_test(suite, "test of find_header", test_find_header)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of init_routes", test_init_routes_1)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of url_path_cmp", test_url_path_cmp)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of insert_route", test_insert_route)) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(suite, "test of find_route", test_find_route)) {
         CU_cleanup_registry();
         return CU_get_error();
     }

@@ -42,3 +42,28 @@ inline static int is_non_space(char ch) {
  * @retval `NULL` If cannot find any non-white-space character before `\0`
  */
 char *find_non_space (char *str);
+
+/**
+ * @brief Compare two URL paths.
+ * 
+ * @param lhs URL path as char* string
+ * @param rhs Another URL path as char* string
+ * @return similar to `strcmp()`. 0 if they equal. 1 or -1 as lexicographical order.
+ */
+inline static int url_path_cmp(const char *lhs, const char *rhs) {
+    for (int i = 0; ; i++) {
+        if (lhs[i] != rhs[i]) {
+            /* even though the last '/' is omitted, it is the same path */
+            if ((lhs[i] == '\0' && rhs[i] == '/' && rhs[i + 1] == '\0')
+                || (rhs[i] == '\0' && lhs[i] == '/' && lhs[i + 1] == '\0')) {               
+                    return 0;
+            }            
+            if (lhs[i] - rhs[i] < 0)
+                return -1;
+            else 
+                return 1;
+        } else if (lhs[i] == '\0') {
+            return 0;
+        }
+    }
+}
