@@ -23,12 +23,56 @@ enum http_status_code;
 enum http_method;
 enum http_version; 
 
+struct web_server;
 struct route;
+struct routes;
 struct http_header;
 struct http_headers;
 struct http_query_parameters;
 struct http_request;
 struct http_response;
+
+/**
+ * @brief Run the web server
+ * @param server Web server configuration structure
+ * @return 0 on success, -1 on error
+ */
+int run_web_server(struct web_server server);
+
+/**
+ * @brief Find the route correspond to path and http method.
+ * 
+ * @param routes route table to search
+ * @param path URL path to find
+ * @param method HTTP method to find
+ * @return Route matched by `path` and `method`. Returns NULL if not found.
+ */
+struct route *find_route(const struct routes* routes, const char *path, enum http_method method);
+
+/**
+ * @brief Insert new route into `sturct routes`. `path` must start with '/'.   
+ * If you pass a route with same path and method as the route that already exists in `route_table`, it will be failed.
+ * 
+ * @param route_table `struct routes` to be inserted with a new route
+ * @param path URL path of route
+ * @param method HTTP method accepted by the new route
+ * @param callback function to execute when HTTP request reaches the route
+ * @return The `struct routes*` given as `route_table`. In any situation, failing to store new header, return **NULL**. 
+ */
+struct routes* insert_route(
+		struct routes       *route_table,
+		const char          *path,
+		enum http_method    method,
+		struct http_response *(*callback)(struct http_request request)
+);
+
+/**
+ * @brief Initialize members of `sturct routes`.
+ * 
+ * @param route_table `struct routes` to be initialized.
+ * @return The `struct routes*` given as `route_table`. In any situation, failing to store new header, return **NULL**. 
+ */
+struct routes* init_routes(struct routes *route_table);
 
 int init_http_request(
     struct http_request             *request,
@@ -43,7 +87,7 @@ int init_http_request(
 /**
  * @brief Parse an HTTP request string into a struct http_request.
  */
-struct http_request parse_http_request(const char *request);
+struct http_request *parse_http_request(const char *request);
 
 /**
  * @brief Parse the HTTP method string and return its enum representation.
@@ -51,10 +95,24 @@ struct http_request parse_http_request(const char *request);
 enum http_method parse_http_method(const char *method);
 
 /**
+ * @brief Convert the HTTP method enum to its corresponding string representation.
+ */
+char* http_method_stringify(const enum http_method method);
+
+/**
  * @brief Parse the HTTP version string and return its enum representation.
  */
 enum http_version parse_http_version(const char *version);
 
+/**
+ * @brief Convert an HTTP version enum to its string representation.
+ */
+char* http_version_stringify(const enum http_version version);
+
+/**
+ * @brief Converts an HTTP status code to its reason phrase.
+ */
+char* http_status_code_stringify(const enum http_status_code code);
 
 /**
  * @brief Cleanup `struct http_headers` instance.
@@ -62,6 +120,13 @@ enum http_version parse_http_version(const char *version);
  * @param headers target to cleanup
  */
 void destruct_http_headers(struct http_headers *headers);
+
+/**
+ * @brief Cleanup `struct http_request` instance.
+ * 
+ * @param request target to cleanup
+ */
+void destruct_http_request(struct http_request *request);
 
 /**
  * @brief Parses the key and value from a substring of HTTP headers and returns a struct http_header*, allocated with malloc.
@@ -82,6 +147,11 @@ struct http_header* parse_http_header(char *header_string);
 struct http_headers parse_http_headers(char* headers_string);
 
 /**
+ * @brief Converts http_headers struct into a single HTTP headers string.
+ */
+char *http_headers_stringify(struct http_headers *headers);
+
+/**
  * @brief Insert new header into `headers`.
  * 
  * @param headers a `struct http_headers` where wants to store given header having 'key' and 'value'.
@@ -92,7 +162,14 @@ struct http_headers parse_http_headers(char* headers_string);
  */
 struct http_headers* insert_header(struct http_headers *headers, char* key, char* value);
 
-struct http_header* find_header(char* key);
+/**
+ * @brief Find a header having same `key` in `headers`.
+ * 
+ * @param headers List of headers to search for.
+ * @param key key of header
+ * @return Header matched by `key`. Returns NULL if not found.
+ */
+struct http_header* find_header(const struct http_headers *headers, const char *key);
 
 /**
  * @brief Parses a query parameter string into key-value pair
@@ -161,7 +238,18 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
  */
 struct http_query_parameters parse_query_parameters(char* parameters_string);
 
-struct http_query_parameter* find_query_parameter(char* key);
+/**
+ * @brief Finds a query parameter by its key.
+ *
+ * This function searches through the provided list of query parameters
+ * and returns the parameter that matches the given key.
+ *
+ * @param query_parameters A pointer to the list of query parameters.
+ * @param param_key The key of the query parameter to find.
+ * @return A pointer to the found query parameter, or NULL if not found
+ *         or if either input parameter is NULL.
+ */
+struct http_query_parameter* find_query_parameter(struct http_query_parameters* query_parameters, char* param_key);
 
 /**
 * @brief Deallocates all memory associated with query parameters
@@ -193,6 +281,16 @@ struct http_query_parameter* find_query_parameter(char* key);
 */
 void free_query_parameters(struct http_query_parameters* query_parameters);
 
+/**
+ * @brief Initializes an HTTP response with the specified status code, headers, version, and body.
+ */
+int init_http_response(
+    struct http_response    *response,
+    enum http_status_code   status_code,
+    struct http_headers     headers,
+    enum http_version       version,
+    char                    *body
+);
 
 char* http_response_stringify(struct http_response http_response);
 
@@ -203,12 +301,41 @@ char* http_response_stringify(struct http_response http_response);
  * @note enum value has `int` type
  */
 enum http_status_code {
+    // 2xx Success
     HTTP_OK = 200,
-    HTTP_NOT_FOUND = 404,
+    HTTP_CREATED = 201,
+    HTTP_ACCEPTED = 202,
+    HTTP_NO_CONTENT = 204,
+
+    // 3xx Redirection
+    HTTP_MOVED_PERMANENTLY = 301,
+    HTTP_FOUND = 302,
+    HTTP_NOT_MODIFIED = 304,
+    HTTP_TEMPORARY_REDIRECT = 307,
+    HTTP_PERMANENT_REDIRECT = 308,
+
+    // 4xx Client Errors
     HTTP_BAD_REQUEST = 400,
-    HTTP_INTERNAL_SERVER_ERROR = 500,
+    HTTP_UNAUTHORIZED = 401,
     HTTP_FORBIDDEN = 403,
-    HTTP_UNAUTHORIZED = 401
+    HTTP_NOT_FOUND = 404,
+    HTTP_METHOD_NOT_ALLOWED = 405,
+    HTTP_REQUEST_TIMEOUT = 408,
+    HTTP_CONFLICT = 409,
+    HTTP_GONE = 410,
+    HTTP_LENGTH_REQUIRED = 411,
+    HTTP_PAYLOAD_TOO_LARGE = 413,
+    HTTP_URI_TOO_LONG = 414,
+    HTTP_UNSUPPORTED_MEDIA_TYPE = 415,
+    HTTP_TOO_MANY_REQUESTS = 429,
+
+    // 5xx Server Errors
+    HTTP_INTERNAL_SERVER_ERROR = 500,
+    HTTP_NOT_IMPLEMENTED = 501,
+    HTTP_BAD_GATEWAY = 502,
+    HTTP_SERVICE_UNAVAILABLE = 503,
+    HTTP_GATEWAY_TIMEOUT = 504,
+    HTTP_HTTP_VERSION_NOT_SUPPORTED = 505
 };
 
 /**
@@ -218,6 +345,8 @@ enum http_status_code {
 enum http_method {
     HTTP_GET,
     HTTP_POST,
+    HTTP_PUT,
+    HTTP_DELETE,
     HTTP_METHOD_UNKNOWN, // Unknown method handling
 };
 
@@ -247,10 +376,30 @@ struct route {
      */
     enum http_method method;
     /**
-     * @brief callback function performed when http request received
-     * 
+     * @brief callback function performed when http request received. Callback function need to return a `struct http_response` pointer
+     * allocated by `malloc`.
      */
-    struct http_response (*callback)(struct http_request request);
+    struct http_response *(*callback)(struct http_request request);
+};
+
+
+
+/**
+ * @brief Struct for manage various routes. Route maybe correspond to the endpoint.
+ */
+struct routes {
+    /**
+     * @brief the number of items(routes)
+     */
+    int             size;
+    /**
+     * @brief capacity of routes array
+     */
+    int             capacity;
+    /**
+     * @brief the array of `struct route*`
+     */
+    struct route    **items;
 };
 
 /**
@@ -371,4 +520,26 @@ struct http_response {
      * @brief content body of http response. If content body is empty, body is NULL.
      */
     char* body;
+};
+
+/**
+ * @brief Represents a web server with routing and status information.
+ * 
+ * This structure holds the routing table, HTTP status code, and response body
+ * for a web server.
+ * 
+ */
+struct web_server {
+    /**
+     * @brief Pointer to the routing table containing the routes for the web server.
+     */
+    struct routes *route_table;
+    /**
+     * @brief The HTTP status code representing the current status of the web server.
+     */
+    int port_num;
+    /**
+     * @brief Size of buffer in which used by `listen`.
+     */
+    int backlog;
 };
