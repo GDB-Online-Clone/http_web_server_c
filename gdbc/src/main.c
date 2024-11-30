@@ -1,6 +1,7 @@
 #include <webserver/http.h>
 #include <webserver/utility.h>
 #include <ctype.h>
+#include "service.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -9,17 +10,7 @@
 static atomic_int source_code_count = 0;
 
 /**
- * @brief types of compilers and langs
- */
-enum compiler_type {
-    gcc_c,
-    gcc_cpp,
-    clang_c,
-    clang_cpp
-};
-
-/**
- * @test curl -X POST http://localhost:10010/stop -H "Content-Type: application/json" -d '{"key": "value"}'
+ * @test curl -X POST http://localhost:10010/stop?pid=10 -H "Content-Type: application/json" -d '{"key": "value"}'
  */
 static struct http_response *stop_callback(struct http_request request) {
     DLOG("Enter '/stop' route\n");
