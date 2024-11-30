@@ -212,3 +212,11 @@ void show_process_list() {
                                 : "\033[31mINACTIVE\033[0m");
     }
 }
+
+int stop_process(int pidx) {
+    if (kill(PROCESSES[pidx].pid, SIGKILL) == -1) {
+        perror("kill");        
+        return 0;
+    }
+    return 1;
+}

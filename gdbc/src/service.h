@@ -60,3 +60,12 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
  * @brief See processes list for debugging
  */
 void show_process_list();
+
+/**
+ * @brief Stop the process by given id 
+ * 
+ * @param pidx id of process that `build_and_run` have returned.
+ * @return 1 if success, or 0.
+ */
+int stop_process(int pidx);
+
