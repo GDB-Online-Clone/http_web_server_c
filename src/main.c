@@ -9,6 +9,8 @@
  * @test curl -X POST http://localhost:10010/stop -H "Content-Type: application/json" -d '{"key": "value"}'
  */
 static struct http_response *stop_callback(struct http_request request) {
+    DLOG("Enter '/stop' route\n");
+
     struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
 
     response->http_version = HTTP_1_1;
@@ -28,6 +30,8 @@ static struct http_response *stop_callback(struct http_request request) {
  */
 static struct http_response *input_callback(struct http_request request) 
 {
+    DLOG("Enter '/input' route\n");
+
     struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
 
     response->http_version = HTTP_1_1;
@@ -46,6 +50,8 @@ static struct http_response *input_callback(struct http_request request)
  * @test curl -X GET http://localhost:10010/program
  */
 static struct http_response *program_callback(struct http_request request) {
+    DLOG("Enter '/program' route\n");
+
     struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
 
     response->http_version = HTTP_1_1;
@@ -67,6 +73,8 @@ static struct http_response *program_callback(struct http_request request) {
  * @return struct http_response* Response containing process ID or error
  */
 static struct http_response* handle_text_mode(struct http_request request) {
+    DLOG("Enter '/run/text-mode' route\n");
+
     // 1. 응답 구조체 초기화
     struct http_response* response = malloc(sizeof(struct http_response));
     if (!response) {
@@ -147,6 +155,8 @@ static struct http_response* handle_text_mode(struct http_request request) {
  * @return struct http_response* Response containing process ID or error
  */
 static struct http_response* handle_interactive_mode(struct http_request request) {
+   DLOG("Enter '/run/interactive-mode' route\n");
+   
    struct http_response* response = malloc(sizeof(struct http_response));
    if (!response) {
        return NULL;
@@ -232,6 +242,8 @@ static struct http_response* handle_interactive_mode(struct http_request request
  * @return struct http_response* Response containing process ID or error
  */
 static struct http_response* handle_debugger(struct http_request request) {
+    DLOG("Enter '/run/debugger' route\n");
+
     struct http_response* response = malloc(sizeof(struct http_response));
     if (!response) {
         return NULL;
