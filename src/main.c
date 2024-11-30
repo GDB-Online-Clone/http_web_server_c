@@ -221,10 +221,6 @@ static struct http_response *handle_text_mode(struct http_request request) {
         return response;
     }
 
-    //test -> 나중에 지워야 함
-    language->value = "c";
-    compiler_type->value = "gcc";
-
     /**
      * languae 이 c, cpp 인지 판단 후, compiler_type이 gcc인지 clang인지 판단하여 build_and_run에 넘겨준다.
      *
@@ -232,7 +228,7 @@ static struct http_response *handle_text_mode(struct http_request request) {
     if (strcmp(language->value, "c") == 0) {
         if (strcmp(compiler_type->value, "gcc") == 0) {
             // gcc로 컴파일
-            int result = build_and_run(source_code_file, gcc_c, trimmed_compile_opt, trimmed_args);
+            result = build_and_run(source_code_file, gcc_c, trimmed_compile_opt, trimmed_args);
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
@@ -243,7 +239,7 @@ static struct http_response *handle_text_mode(struct http_request request) {
             }
         } else if (strcmp(compiler_type->value, "clang") == 0) {
             // clang으로 컴파일
-            int result = build_and_run(source_code_file, clang_c, trimmed_compile_opt, trimmed_args);
+            result = build_and_run(source_code_file, clang_c, trimmed_compile_opt, trimmed_args);
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
@@ -256,7 +252,7 @@ static struct http_response *handle_text_mode(struct http_request request) {
     } else if (strcmp(language->value, "cpp") == 0) {
         if (strcmp(compiler_type->value, "gcc") == 0) {
             // gcc로 컴파일
-            int result = build_and_run(source_code_file, gcc_cpp, trimmed_compile_opt, trimmed_args);
+            result = build_and_run(source_code_file, gcc_cpp, trimmed_compile_opt, trimmed_args);
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
@@ -267,7 +263,7 @@ static struct http_response *handle_text_mode(struct http_request request) {
             }
         } else if (strcmp(compiler_type->value, "clang") == 0) {
             // clang으로 컴파일
-            int result = build_and_run(source_code_file, clang_cpp, trimmed_compile_opt, trimmed_args);
+            result = build_and_run(source_code_file, clang_cpp, trimmed_compile_opt, trimmed_args);
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
@@ -416,7 +412,7 @@ static struct http_response *handle_interactive_mode(struct http_request request
     if (strcmp(language->value, "c") == 0) {
         if (strcmp(compiler_type->value, "gcc") == 0) {
             // gcc로 컴파일
-            int result = build_and_run(source_code_file, gcc_c, trimmed_compile_opt, trimmed_args);
+            result = build_and_run(source_code_file, gcc_c, trimmed_compile_opt, trimmed_args);
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
@@ -427,7 +423,7 @@ static struct http_response *handle_interactive_mode(struct http_request request
             }
         } else if (strcmp(compiler_type->value, "clang") == 0) {
             // clang으로 컴파일
-            int result = build_and_run(source_code_file, clang_c, trimmed_compile_opt, trimmed_args);
+            result = build_and_run(source_code_file, clang_c, trimmed_compile_opt, trimmed_args);
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
@@ -440,7 +436,7 @@ static struct http_response *handle_interactive_mode(struct http_request request
     } else if (strcmp(language->value, "cpp") == 0) {
         if (strcmp(compiler_type->value, "gcc") == 0) {
             // gcc로 컴파일
-            int result = build_and_run(source_code_file, gcc_cpp, trimmed_compile_opt, trimmed_args);
+            result = build_and_run(source_code_file, gcc_cpp, trimmed_compile_opt, trimmed_args);
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
@@ -451,7 +447,7 @@ static struct http_response *handle_interactive_mode(struct http_request request
             }
         } else if (strcmp(compiler_type->value, "clang") == 0) {
             // clang으로 컴파일
-            int result = build_and_run(source_code_file, clang_cpp, trimmed_compile_opt, trimmed_args);
+            result = build_and_run(source_code_file, clang_cpp, trimmed_compile_opt, trimmed_args);
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
@@ -602,7 +598,7 @@ static struct http_response *handle_debugger(struct http_request request) {
     if (strcmp(language->value, "c") == 0) {
         if (strcmp(compiler_type->value, "gcc") == 0) {
             // gcc로 컴파일
-            int result = build_and_run(source_code_file, gcc_c, trimmed_compile_opt, trimmed_args);
+            result = build_and_run(source_code_file, gcc_c, trimmed_compile_opt, trimmed_args);
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
@@ -613,7 +609,7 @@ static struct http_response *handle_debugger(struct http_request request) {
             }
         } else if (strcmp(compiler_type->value, "clang") == 0) {
             // clang으로 컴파일
-            int result = build_and_run(source_code_file, clang_c, trimmed_compile_opt, trimmed_args);
+            result = build_and_run(source_code_file, clang_c, trimmed_compile_opt, trimmed_args);
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
@@ -630,7 +626,7 @@ static struct http_response *handle_debugger(struct http_request request) {
              * build_and_run은 성공하면 해당 프로세스의 PID를 반환한다.
              * 실패하면 -1을 반환한다.
              */
-            int result = build_and_run(source_code_file, gcc_cpp, trimmed_compile_opt, trimmed_args);
+            result = build_and_run(source_code_file, gcc_cpp, trimmed_compile_opt, trimmed_args);
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
