@@ -22,6 +22,8 @@ enum compiler_type {
  * @test curl -X POST http://localhost:10010/stop -H "Content-Type: application/json" -d '{"key": "value"}'
  */
 static struct http_response *stop_callback(struct http_request request) {
+    DLOG("Enter '/stop' route\n");
+
     struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
 
     response->http_version = HTTP_1_1;
@@ -39,6 +41,8 @@ static struct http_response *stop_callback(struct http_request request) {
  * @test curl -X POST http://localhost:10010/input -H "Content-Type: application/json" -d '{"key": "input_value"}'
  */
 static struct http_response *input_callback(struct http_request request) {
+    DLOG("Enter '/input' route\n");
+
     struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
 
     response->http_version = HTTP_1_1;
@@ -56,6 +60,8 @@ static struct http_response *input_callback(struct http_request request) {
  * @test curl -X GET http://localhost:10010/program
  */
 static struct http_response *program_callback(struct http_request request) {
+    DLOG("Enter '/program' route\n");
+
     struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
 
     response->http_version = HTTP_1_1;
@@ -114,6 +120,8 @@ static char *trim_string(const char *str) {
  * @return struct http_response* Response containing process ID or error
  */
 static struct http_response *handle_text_mode(struct http_request request) {
+    DLOG("Enter '/run/text-mode' route\n");
+
     int result; // build_and_run 반환값 저장 변수
 
     // 1. 응답 구조체 초기화
@@ -275,10 +283,11 @@ static struct http_response *handle_text_mode(struct http_request request) {
     char response_body[32];
     snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", pid);
 
+    // 응답 헤더 설정
     insert_header(&headers, "Content-Type", "application/json");
     insert_header(&headers, "Access-Control-Allow-Origin", "*");
     insert_header(&headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    insert_header(&headers, "Access-Control-Allow-Headers", "Content-Type, Authorization");
+    insert_header(&headers, "Access-Control-Allow-Headers", "*");
 
     response->status_code = HTTP_OK;
     response->body = strdup(response_body);
@@ -295,6 +304,8 @@ static struct http_response *handle_text_mode(struct http_request request) {
  * @return struct http_response* Response containing process ID or error
  */
 static struct http_response *handle_interactive_mode(struct http_request request) {
+    DLOG("Enter '/run/interactive-mode' route\n");
+
     int result; // build_and_run 반환값 저장 변수
 
     struct http_response *response = malloc(sizeof(struct http_response));
@@ -461,7 +472,7 @@ static struct http_response *handle_interactive_mode(struct http_request request
     insert_header(&headers, "Content-Type", "application/json");
     insert_header(&headers, "Access-Control-Allow-Origin", "*");
     insert_header(&headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    insert_header(&headers, "Access-Control-Allow-Headers", "Content-Type, Authorization");
+    insert_header(&headers, "Access-Control-Allow-Headers", "*");
 
     // 응답 설정
     response->status_code = HTTP_OK;
@@ -479,6 +490,8 @@ static struct http_response *handle_interactive_mode(struct http_request request
  * @return struct http_response* Response containing process ID or error
  */
 static struct http_response *handle_debugger(struct http_request request) {
+    DLOG("Enter '/run/debugger' route\n");
+
     int result; // build_and_run 반환값 저장 변수
 
     struct http_response *response = malloc(sizeof(struct http_response));
@@ -648,7 +661,7 @@ static struct http_response *handle_debugger(struct http_request request) {
     insert_header(&headers, "Content-Type", "application/json");
     insert_header(&headers, "Access-Control-Allow-Origin", "*");
     insert_header(&headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    insert_header(&headers, "Access-Control-Allow-Headers", "Content-Type, Authorization");
+    insert_header(&headers, "Access-Control-Allow-Headers", "*");
 
     // 응답 설정
     response->status_code = HTTP_OK;
