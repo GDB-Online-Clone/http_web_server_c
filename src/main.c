@@ -130,6 +130,90 @@ static struct http_response* handle_text_mode(struct http_request request) {
     return response;
 }
 
+/**
+ * @brief Handle POST requests to /run/interactive-mode endpoint
+ * 
+ * @param request HTTP request containing JSON body and query parameters
+ * @return struct http_response* Response containing process ID or error
+ */
+static struct http_response* handle_interactive_mode(struct http_request request) {
+   struct http_response* response = malloc(sizeof(struct http_response));
+   if (!response) {
+       return NULL;
+   }
+
+   struct http_headers headers = {
+       .capacity = 8,
+       .size = 0,
+       .items = malloc(8 * sizeof(struct http_header*))
+   };
+
+   if (!headers.items) {
+       free(response);
+       return NULL;
+   }
+
+   // 1. Content-Type 헤더 유효성 검사
+   struct http_header* content_type = find_header(&request.headers, "Content-Type");
+   if (!content_type || strcmp(content_type->value, "application/json") != 0) {
+       response->status_code = HTTP_BAD_REQUEST;
+       response->body = strdup("Content-Type must be application/json");
+       response->headers = headers;
+       response->http_version = HTTP_1_1;
+       return response;
+   }
+
+   // 2. 필수 쿼리 파라미터 'language' 유효성 검사
+   struct http_query_parameter* language = find_query_parameter(
+       &request.query_parameters, 
+       "language"
+   );
+   if (!language || !language->value || strlen(language->value) == 0) {
+       response->status_code = HTTP_BAD_REQUEST;
+       response->body = strdup("Missing required query parameter: language");
+       response->headers = headers;
+       response->http_version = HTTP_1_1;
+       return response;
+   }
+
+   // 3. 선택적 파라미터(compile_option, argument)는 유효성 검사가 필요 없음
+   struct http_query_parameter* compile_option = find_query_parameter(
+       &request.query_parameters, 
+       "compile_option"
+   );
+   struct http_query_parameter* argument = find_query_parameter(
+       &request.query_parameters, 
+       "argument"
+   );
+
+   // 4. 요청 본문 유효성 검사
+   if (!request.body || strlen(request.body) == 0) {
+       response->status_code = HTTP_BAD_REQUEST;
+       response->body = strdup("Missing request body");
+       response->headers = headers;
+       response->http_version = HTTP_1_1;
+       return response;
+   }
+
+   // TODO: 본문을 파싱하고 코드 실행
+   // 현재는 임시 PID 반환
+   int pid = 12345;
+
+   // 5. 성공 응답 생성
+   char response_body[32];
+   snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", pid);
+
+   // 응답 헤더 설정
+   insert_header(&headers, "Content-Type", "application/json");
+   
+   // 응답 설정
+   response->status_code = HTTP_OK;
+   response->body = strdup(response_body);
+   response->headers = headers;
+   response->http_version = HTTP_1_1;
+
+   return response;
+}
 
 /**
  * @brief Build Test 용
@@ -143,6 +227,7 @@ int main() {
     //insert_route(&route_table, "/hello-world", HTTP_GET, hello_world);
     // 라우트 등록
     insert_route(&route_table, "/run/text-mode", HTTP_POST, handle_text_mode);
+    insert_route(&route_table, "/run/interactive-mode", HTTP_POST, handle_interactive_mode);
 
     struct web_server app = (struct web_server) {
         .route_table = &route_table,
