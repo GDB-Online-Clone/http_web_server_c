@@ -1,6 +1,6 @@
+#include <ctype.h>
 #include <webserver/http.h>
 #include <webserver/utility.h>
-#include <ctype.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -149,35 +149,97 @@ static struct http_response *handle_text_mode(struct http_request request) {
         return response;
     }
 
-    // 3. 필수 쿼리 파라미터 'language' 검증
-    struct http_query_parameter *language = find_query_parameter(
-        &request.query_parameters,
-        "language");
-    if (!language || !language->value || strlen(language->value) == 0) {
-        response->status_code = HTTP_BAD_REQUEST;
-        response->body = strdup("Missing required query parameter: language");
-        response->headers = headers;
-        response->http_version = HTTP_1_1;
-        return response;
-    }
+    // // 3. 필수 쿼리 파라미터 'language' 검증
+    // struct http_query_parameter *language = find_query_parameter(
+    //     &request.query_parameters,
+    //     "language");
+    // if (!language || !language->value || strlen(language->value) == 0) {
+    //     response->status_code = HTTP_BAD_REQUEST;
+    //     response->body = strdup("Missing required query parameter: language");
+    //     response->headers = headers;
+    //     response->http_version = HTTP_1_1;
+    //     return response;
+    // }
 
-    // 4. 필수 쿼리 파라미터 'compiler_type' 검증
-    struct http_query_parameter *compiler_type = find_query_parameter(
-        &request.query_parameters,
-        "compiler_type");
-    if (!compiler_type || !compiler_type->value || strlen(compiler_type->value) == 0) {
-        response->status_code = HTTP_BAD_REQUEST;
-        response->body = strdup("Missing required query parameter: compiler_type");
-        response->headers = headers;
-        response->http_version = HTTP_1_1;
-        return response;
-    }
+    // // 4. 필수 쿼리 파라미터 'compiler_type' 검증
+    // struct http_query_parameter *compiler_type = find_query_parameter(
+    //     &request.query_parameters,
+    //     "compiler_type");
+    // if (!compiler_type || !compiler_type->value || strlen(compiler_type->value) == 0) {
+    //     response->status_code = HTTP_BAD_REQUEST;
+    //     response->body = strdup("Missing required query parameter: compiler_type");
+    //     response->headers = headers;
+    //     response->http_version = HTTP_1_1;
+    //     return response;
+    // }
 
     // 5. 선택 파라미터 검증 -> 없으면 NULL 값 반환
-    struct http_query_parameter *compile_opt =
-        find_query_parameter(&request.query_parameters, "compile_option");
-    struct http_query_parameter *args =
-        find_query_parameter(&request.query_parameters, "argument");
+    // struct http_query_parameter *compile_opt =
+    //     find_query_parameter(&request.query_parameters, "compile_option");
+    // struct http_query_parameter *args =
+    //     find_query_parameter(&request.query_parameters, "argument");
+
+    // Test용 코드
+    struct http_query_parameter *language = malloc(sizeof(struct http_query_parameter));
+    if (!language) {
+        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+        response->body = strdup("Failed to allocate memory");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+        return response;
+    }
+    language->key = strdup("language");
+    language->value = strdup("c");
+
+    struct http_query_parameter *compiler_type = malloc(sizeof(struct http_query_parameter));
+    if (!compiler_type) {
+        free(language->key);
+        free(language->value);
+        free(language);
+        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+        response->body = strdup("Failed to allocate memory");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+        return response;
+    }
+    compiler_type->key = strdup("compiler_type");
+    compiler_type->value = strdup("gcc");
+
+    struct http_query_parameter *compile_opt = malloc(sizeof(struct http_query_parameter));
+    if (!compile_opt) {
+        free(language->key);
+        free(language->value);
+        free(language);
+        free(compiler_type->key);
+        free(compiler_type->value);
+        free(compiler_type);
+        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+        response->body = strdup("Failed to allocate memory");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+        return response;
+    }
+    compile_opt->key = strdup("compile_option");
+    compile_opt->value = NULL;
+
+    struct http_query_parameter *args = malloc(sizeof(struct http_query_parameter));
+    if (!args) {
+        free(language->key);
+        free(language->value);
+        free(language);
+        free(compiler_type->key);
+        free(compiler_type->value);
+        free(compiler_type);
+        free(compile_opt->key);
+        free(compile_opt);
+        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+        response->body = strdup("Failed to allocate memory");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+        return response;
+    }
+    args->key = strdup("argument");
+    args->value = NULL;
 
     // 5-1. 선택 파라미터 trim
     char *trimmed_compile_opt = trim_string(compile_opt ? compile_opt->value : NULL);
@@ -233,7 +295,7 @@ static struct http_response *handle_text_mode(struct http_request request) {
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
-                
+
                 free(trimmed_compile_opt);
                 free(trimmed_args);
                 return response;
@@ -244,7 +306,7 @@ static struct http_response *handle_text_mode(struct http_request request) {
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
-                
+
                 free(trimmed_compile_opt);
                 free(trimmed_args);
                 return response;
@@ -257,7 +319,7 @@ static struct http_response *handle_text_mode(struct http_request request) {
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
-                
+
                 free(trimmed_compile_opt);
                 free(trimmed_args);
                 return response;
@@ -268,7 +330,7 @@ static struct http_response *handle_text_mode(struct http_request request) {
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
-                
+
                 free(trimmed_compile_opt);
                 free(trimmed_args);
                 return response;
@@ -293,6 +355,42 @@ static struct http_response *handle_text_mode(struct http_request request) {
     response->body = strdup(response_body);
     response->headers = headers;
     response->http_version = HTTP_1_1;
+
+    // Test 용 코드 메모리 해제
+    if (language) {
+        if (language->key)
+            free(language->key);
+        if (language->value)
+            free(language->value);
+        free(language);
+    }
+    if (compiler_type) {
+        if (compiler_type->key)
+            free(compiler_type->key);
+        if (compiler_type->value)
+            free(compiler_type->value);
+        free(compiler_type);
+    }
+    if (compile_opt) {
+        if (compile_opt->key)
+            free(compile_opt->key);
+        if (compile_opt->value)
+            free(compile_opt->value);
+        free(compile_opt);
+    }
+    if (args) {
+        if (args->key)
+            free(args->key);
+        if (args->value)
+            free(args->value);
+        free(args);
+    }
+
+    // trimmed 문자열 해제
+    if (trimmed_compile_opt)
+        free(trimmed_compile_opt);
+    if (trimmed_args)
+        free(trimmed_args);
 
     return response;
 }
@@ -324,48 +422,48 @@ static struct http_response *handle_interactive_mode(struct http_request request
     }
 
     // 1. Content-Type 헤더 유효성 검사
-    struct http_header *content_type = find_header(&request.headers, "Content-Type");
-    if (!content_type || strcmp(content_type->value, "application/json") != 0) {
-        response->status_code = HTTP_BAD_REQUEST;
-        response->body = strdup("Content-Type must be application/json");
-        response->headers = headers;
-        response->http_version = HTTP_1_1;
-        return response;
-    }
+    // struct http_header *content_type = find_header(&request.headers, "Content-Type");
+    // if (!content_type || strcmp(content_type->value, "application/json") != 0) {
+    //     response->status_code = HTTP_BAD_REQUEST;
+    //     response->body = strdup("Content-Type must be application/json");
+    //     response->headers = headers;
+    //     response->http_version = HTTP_1_1;
+    //     return response;
+    // }
 
-    // 2. 필수 쿼리 파라미터 'language' 유효성 검사
-    struct http_query_parameter *language = find_query_parameter(
-        &request.query_parameters,
-        "language");
-    if (!language || !language->value || strlen(language->value) == 0) {
-        response->status_code = HTTP_BAD_REQUEST;
-        response->body = strdup("Missing required query parameter: language");
-        response->headers = headers;
-        response->http_version = HTTP_1_1;
-        return response;
-    }
+    // // 2. 필수 쿼리 파라미터 'language' 유효성 검사
+    // struct http_query_parameter *language = find_query_parameter(
+    //     &request.query_parameters,
+    //     "language");
+    // if (!language || !language->value || strlen(language->value) == 0) {
+    //     response->status_code = HTTP_BAD_REQUEST;
+    //     response->body = strdup("Missing required query parameter: language");
+    //     response->headers = headers;
+    //     response->http_version = HTTP_1_1;
+    //     return response;
+    // }
 
     // 4. 필수 쿼리 파라미터 'compiler_type' 검증
-    struct http_query_parameter *compiler_type = find_query_parameter(
-        &request.query_parameters,
-        "compiler_type");
-    if (!compiler_type || !compiler_type->value || strlen(compiler_type->value) == 0) {
-        response->status_code = HTTP_BAD_REQUEST;
-        response->body = strdup("Missing required query parameter: compiler_type");
-        response->headers = headers;
-        response->http_version = HTTP_1_1;
-        return response;
-    }
+    // struct http_query_parameter *compiler_type = find_query_parameter(
+    //     &request.query_parameters,
+    //     "compiler_type");
+    // if (!compiler_type || !compiler_type->value || strlen(compiler_type->value) == 0) {
+    //     response->status_code = HTTP_BAD_REQUEST;
+    //     response->body = strdup("Missing required query parameter: compiler_type");
+    //     response->headers = headers;
+    //     response->http_version = HTTP_1_1;
+    //     return response;
+    // }
 
     // 5. 선택 파라미터 검증 -> 없으면 NULL 값 반환
-    struct http_query_parameter *compile_opt =
-        find_query_parameter(&request.query_parameters, "compile_option");
-    struct http_query_parameter *args =
-        find_query_parameter(&request.query_parameters, "argument");
+    // struct http_query_parameter *compile_opt =
+    //     find_query_parameter(&request.query_parameters, "compile_option");
+    // struct http_query_parameter *args =
+    //     find_query_parameter(&request.query_parameters, "argument");
 
     // 5-1. 선택 파라미터 trim
-    char *trimmed_compile_opt = trim_string(compile_opt ? compile_opt->value : NULL);
-    char *trimmed_args = trim_string(args ? args->value : NULL);
+    // char *trimmed_compile_opt = trim_string(compile_opt ? compile_opt->value : NULL);
+    // char *trimmed_args = trim_string(args ? args->value : NULL);
 
     // 6. 요청 본문 유효성 검사
     if (!request.body || strlen(request.body) == 0) {
@@ -376,93 +474,93 @@ static struct http_response *handle_interactive_mode(struct http_request request
         return response;
     }
 
-    /**
-     * @brief body 내용을 소스코드 파일로 만든다.
-     * 만드는 파일 이름은 temp/{source_code_count}.txt로 만든다.
-     * 단, 소스코드 파일로 만드는 중 오류가 생기면 response에 500 에러를 담아 반환한다.
-     *
-     * */
-    char source_code_file[32];
-    snprintf(source_code_file, sizeof(source_code_file), "./temp/%d.txt", atomic_fetch_add(&source_code_count, 1));
+    // /**
+    //  * @brief body 내용을 소스코드 파일로 만든다.
+    //  * 만드는 파일 이름은 temp/{source_code_count}.txt로 만든다.
+    //  * 단, 소스코드 파일로 만드는 중 오류가 생기면 response에 500 에러를 담아 반환한다.
+    //  *
+    //  * */
+    // char source_code_file[32];
+    // snprintf(source_code_file, sizeof(source_code_file), "./temp/%d.txt", atomic_fetch_add(&source_code_count, 1));
 
-    FILE *fp = fopen(source_code_file, "w");
+    // FILE *fp = fopen(source_code_file, "w");
 
-    if (!fp) {
-        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
-        response->body = strdup("Failed to create source code file");
-        response->headers = headers;
-        response->http_version = HTTP_1_1;
+    // if (!fp) {
+    //     response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+    //     response->body = strdup("Failed to create source code file");
+    //     response->headers = headers;
+    //     response->http_version = HTTP_1_1;
 
-        return response;
-    }
+    //     return response;
+    // }
 
-    if (fprintf(fp, "%s", extract_source_code_from_body(request.body)) < 0 || fclose(fp) != 0) {
-        remove(source_code_file);
-        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
-        response->body = strdup("Failed to write source code to file");
-        response->headers = headers;
-        response->http_version = HTTP_1_1;
+    // if (fprintf(fp, "%s", extract_source_code_from_body(request.body)) < 0 || fclose(fp) != 0) {
+    //     remove(source_code_file);
+    //     response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+    //     response->body = strdup("Failed to write source code to file");
+    //     response->headers = headers;
+    //     response->http_version = HTTP_1_1;
 
-        return response;
-    }
+    //     return response;
+    // }
 
-    /**
-     * languae 이 c, cpp 인지 판단 후, compiler_type이 gcc인지 clang인지 판단하여 build_and_run에 넘겨준다.
-     *
-     */
-    if (strcmp(language->value, "c") == 0) {
-        if (strcmp(compiler_type->value, "gcc") == 0) {
-            // gcc로 컴파일
-            result = build_and_run(source_code_file, gcc_c, trimmed_compile_opt, trimmed_args);
-            if (result < 0) {
-                response->status_code = HTTP_INTERNAL_SERVER_ERROR;
-                response->body = strdup("Failed to build and run program");
-                
-                free(trimmed_compile_opt);
-                free(trimmed_args);
-                return response;
-            }
-        } else if (strcmp(compiler_type->value, "clang") == 0) {
-            // clang으로 컴파일
-            result = build_and_run(source_code_file, clang_c, trimmed_compile_opt, trimmed_args);
-            if (result < 0) {
-                response->status_code = HTTP_INTERNAL_SERVER_ERROR;
-                response->body = strdup("Failed to build and run program");
-                
-                free(trimmed_compile_opt);
-                free(trimmed_args);
-                return response;
-            }
-        }
-    } else if (strcmp(language->value, "cpp") == 0) {
-        if (strcmp(compiler_type->value, "gcc") == 0) {
-            // gcc로 컴파일
-            result = build_and_run(source_code_file, gcc_cpp, trimmed_compile_opt, trimmed_args);
-            if (result < 0) {
-                response->status_code = HTTP_INTERNAL_SERVER_ERROR;
-                response->body = strdup("Failed to build and run program");
-                
-                free(trimmed_compile_opt);
-                free(trimmed_args);
-                return response;
-            }
-        } else if (strcmp(compiler_type->value, "clang") == 0) {
-            // clang으로 컴파일
-            result = build_and_run(source_code_file, clang_cpp, trimmed_compile_opt, trimmed_args);
-            if (result < 0) {
-                response->status_code = HTTP_INTERNAL_SERVER_ERROR;
-                response->body = strdup("Failed to build and run program");
-                
-                free(trimmed_compile_opt);
-                free(trimmed_args);
-                return response;
-            }
-        }
-    }
+    // /**
+    //  * languae 이 c, cpp 인지 판단 후, compiler_type이 gcc인지 clang인지 판단하여 build_and_run에 넘겨준다.
+    //  *
+    //  */
+    // if (strcmp(language->value, "c") == 0) {
+    //     if (strcmp(compiler_type->value, "gcc") == 0) {
+    //         // gcc로 컴파일
+    //         result = build_and_run(source_code_file, gcc_c, trimmed_compile_opt, trimmed_args);
+    //         if (result < 0) {
+    //             response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+    //             response->body = strdup("Failed to build and run program");
+
+    //             free(trimmed_compile_opt);
+    //             free(trimmed_args);
+    //             return response;
+    //         }
+    //     } else if (strcmp(compiler_type->value, "clang") == 0) {
+    //         // clang으로 컴파일
+    //         result = build_and_run(source_code_file, clang_c, trimmed_compile_opt, trimmed_args);
+    //         if (result < 0) {
+    //             response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+    //             response->body = strdup("Failed to build and run program");
+
+    //             free(trimmed_compile_opt);
+    //             free(trimmed_args);
+    //             return response;
+    //         }
+    //     }
+    // } else if (strcmp(language->value, "cpp") == 0) {
+    //     if (strcmp(compiler_type->value, "gcc") == 0) {
+    //         // gcc로 컴파일
+    //         result = build_and_run(source_code_file, gcc_cpp, trimmed_compile_opt, trimmed_args);
+    //         if (result < 0) {
+    //             response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+    //             response->body = strdup("Failed to build and run program");
+
+    //             free(trimmed_compile_opt);
+    //             free(trimmed_args);
+    //             return response;
+    //         }
+    //     } else if (strcmp(compiler_type->value, "clang") == 0) {
+    //         // clang으로 컴파일
+    //         result = build_and_run(source_code_file, clang_cpp, trimmed_compile_opt, trimmed_args);
+    //         if (result < 0) {
+    //             response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+    //             response->body = strdup("Failed to build and run program");
+
+    //             free(trimmed_compile_opt);
+    //             free(trimmed_args);
+    //             return response;
+    //         }
+    //     }
+    // }
 
     // TODO: 본문을 파싱하고 코드 실행
     // PID 반환
-    int pid = result;
+    int pid = 12;
 
     // 5. 성공 응답 생성
     char response_body[32];
@@ -603,7 +701,7 @@ static struct http_response *handle_debugger(struct http_request request) {
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
-                
+
                 free(trimmed_compile_opt);
                 free(trimmed_args);
                 return response;
@@ -614,7 +712,7 @@ static struct http_response *handle_debugger(struct http_request request) {
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
-                
+
                 free(trimmed_compile_opt);
                 free(trimmed_args);
                 return response;
@@ -631,7 +729,7 @@ static struct http_response *handle_debugger(struct http_request request) {
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
-                
+
                 free(trimmed_compile_opt);
                 free(trimmed_args);
                 return response;
@@ -642,7 +740,7 @@ static struct http_response *handle_debugger(struct http_request request) {
             if (result < 0) {
                 response->status_code = HTTP_INTERNAL_SERVER_ERROR;
                 response->body = strdup("Failed to build and run program");
-                
+
                 free(trimmed_compile_opt);
                 free(trimmed_args);
                 return response;
