@@ -67,11 +67,19 @@ static struct http_response *mirror(struct http_request request) {
 static struct http_response* handle_text_mode(struct http_request request) {
     // 1. 응답 구조체 초기화
     struct http_response* response = malloc(sizeof(struct http_response));
+    if (!response) {
+        return NULL;
+    }
+
     struct http_headers headers = {
         .capacity = 8,
         .size = 0,
         .items = malloc(8 * sizeof(struct http_header*))
     };
+    if (!headers.items) {
+        free(response);
+        return NULL;
+    }
 
     // 2. Content-Type 헤더 검증
     struct http_header* content_type = find_header(&request.headers, "Content-Type");
