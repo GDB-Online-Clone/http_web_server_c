@@ -69,3 +69,13 @@ void show_process_list();
  */
 int stop_process(int pidx);
 
+/**
+ * @brief Get the output from child process. 
+ * If process has no more output and exited, this function will reclaim that process and return -1.
+ * 
+ * @param pidx id of process that `build_and_run` have returned.
+ * @return char* buffer of output allocated with `malloc`, including stderr and stdout. -1 and 0 represent error.
+ * @retval -1 (== 0xffffff) no more read and process is dead
+ * @retval 0 have no output at now
+ */
+char *get_output_from_child(int pidx);
