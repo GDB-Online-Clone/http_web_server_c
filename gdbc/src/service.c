@@ -204,3 +204,11 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     }
     return -1;
 }
+
+void show_process_list() {
+    for (int i = 0; i < MAX_PROCESS; i++) {        
+        printf("**[%5d] PID: %7d\tSTATUS: %s\n", i, PROCESSES[i].pid,
+               PROCESSES[i].is_running ? "\033[32mACTIVE\033[0m"
+                                : "\033[31mINACTIVE\033[0m");
+    }
+}

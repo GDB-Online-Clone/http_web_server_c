@@ -56,3 +56,7 @@ static char *get_compiler_path(enum compiler_type compiler_type) {
  */
 int build_and_run(const char *path_to_source_code, enum compiler_type compiler_type, const char *compile_options, const char *command_line_args);
 
+/**
+ * @brief See processes list for debugging
+ */
+void show_process_list();
