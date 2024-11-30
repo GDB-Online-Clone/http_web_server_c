@@ -138,7 +138,11 @@ static struct http_response* handle_text_mode(struct http_request request) {
     char response_body[32];
     snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", pid);
 
+    // 응답헤더 설정
     insert_header(&headers, "Content-Type", "application/json");
+    insert_header(&headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&headers, "Access-Control-Allow-Headers", "*");
     
     response->status_code = HTTP_OK;
     response->body = strdup(response_body);
@@ -224,7 +228,10 @@ static struct http_response* handle_interactive_mode(struct http_request request
    snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", pid);
 
    // 응답 헤더 설정
-   insert_header(&headers, "Content-Type", "application/json");
+    insert_header(&headers, "Content-Type", "application/json");
+    insert_header(&headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&headers, "Access-Control-Allow-Headers", "*");
    
    // 응답 설정
    response->status_code = HTTP_OK;
@@ -311,6 +318,9 @@ static struct http_response* handle_debugger(struct http_request request) {
 
     // 응답 헤더 설정
     insert_header(&headers, "Content-Type", "application/json");
+    insert_header(&headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&headers, "Access-Control-Allow-Headers", "*");
     
     // 응답 설정
     response->status_code = HTTP_OK;
