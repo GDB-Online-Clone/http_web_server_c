@@ -598,6 +598,7 @@ enum http_method parse_http_method(const char *method) {
     if (strcmp(method, "POST") == 0) return HTTP_POST;
     if (strcmp(method, "PUT") == 0) return HTTP_PUT;
     if (strcmp(method, "DELETE") == 0) return HTTP_DELETE;
+    if (strcmp(method, "OPTIONS") == 0) return HTTP_OPTIONS;
     return HTTP_METHOD_UNKNOWN;
 }
 
@@ -606,6 +607,7 @@ char* http_method_stringify(const enum http_method method) {
     if (method == HTTP_POST) return "POST";
     if (method == HTTP_PUT) return "PUT";
     if (method == HTTP_DELETE) return "DELETE";
+    if (method == HTTP_OPTIONS) return "OPTIONS";
     return "UNKNOWN";
 }
 

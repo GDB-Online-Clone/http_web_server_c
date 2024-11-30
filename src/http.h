@@ -347,6 +347,7 @@ enum http_method {
     HTTP_POST,
     HTTP_PUT,
     HTTP_DELETE,
+    HTTP_OPTIONS,
     HTTP_METHOD_UNKNOWN, // Unknown method handling
 };
 
