@@ -825,13 +825,17 @@ int run_web_server(struct web_server server) {
     response_500 = (struct http_response) {
         .body = NULL,
         .headers = (struct http_headers) {
-            .capacity = 0,
-            .items = NULL,
+            .capacity = 8,
+            .items = malloc(8 * sizeof(struct http_header*)),
             .size = 0
         },
         .http_version = HTTP_1_1,
         .status_code = HTTP_INTERNAL_SERVER_ERROR
     };
+
+    insert_header(&response_500.headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&response_500.headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&response_500.headers, "Access-Control-Allow-Headers", "*");
 
     response_404 = (struct http_response) {
         .body = NULL,
