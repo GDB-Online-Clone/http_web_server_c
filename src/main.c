@@ -5,61 +5,6 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-static struct http_response *hello_world(struct http_request request) {
-    struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
-    
-    response->http_version = HTTP_1_1;
-    response->status_code = HTTP_OK;
-    response->body = strdup("Hello, World!");
-    response->headers = (struct http_headers) {
-        .size = 0,
-        .capacity = 0,
-        .items = NULL
-    };
-
-    return response;
-}
-
-static struct http_response *find_words(struct http_request request) {
-    struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
-    char *found = request.body;
-    int cnt = 0;
-    while ((found = strstr(found, "aaba"))) {
-        cnt++;
-    }
-
-    response->http_version = HTTP_1_1;
-    response->status_code = HTTP_OK;
-    char *buf = malloc(1024);
-    sprintf(buf, "%d\n", cnt);
-    response->body = buf;
-    response->headers = (struct http_headers) {
-        .size = 0,
-        .capacity = 0,
-        .items = NULL
-    };
-
-    return response;
-}
-
-static struct http_response *mirror(struct http_request request) {
-    struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
-    char *found = request.body;
-    
-    response->http_version = HTTP_1_1;
-    response->status_code = HTTP_OK;
-    response->body = strdup(request.body);
-    response->headers = (struct http_headers) {
-        .size = 0,
-        .capacity = 0,
-        .items = NULL
-    };
-
-    return response;
-}
-
-
-
 /**
  * @brief Build Test 용
  * 
@@ -68,8 +13,6 @@ static struct http_response *mirror(struct http_request request) {
 int main() {
     struct routes route_table = {};
     init_routes(&route_table);
-    
-    insert_route(&route_table, "/hello-world", HTTP_GET, hello_world);
 
     struct web_server app = (struct web_server) {
         .route_table = &route_table,
