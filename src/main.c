@@ -213,6 +213,10 @@ static struct http_response *handle_text_mode(struct http_request request) {
         return response;
     }
 
+    //test -> 나중에 지워야 함
+    language->value = "c";
+    compiler_type->value = "gcc";
+
     /**
      * languae 이 c, cpp 인지 판단 후, compiler_type이 gcc인지 clang인지 판단하여 build_and_run에 넘겨준다.
      *
