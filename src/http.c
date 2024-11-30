@@ -825,6 +825,7 @@ int run_web_server(struct web_server server) {
 
     struct http_response    response_500;
     struct http_response    response_404;
+    struct http_response    response_204;
 
     response_500 = (struct http_response) {
         .body = NULL,
@@ -855,6 +856,22 @@ int run_web_server(struct web_server server) {
     insert_header(&response_404.headers, "Access-Control-Allow-Origin", "*");
     insert_header(&response_404.headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     insert_header(&response_404.headers, "Access-Control-Allow-Headers", "*");
+
+    response_204 = (struct http_response) {
+        .body = NULL,
+        .headers = (struct http_headers) {
+            .capacity = 8,
+            .items = malloc(8 * sizeof(struct http_header*)),
+            .size = 0
+        },
+        .http_version = HTTP_1_1,
+        .status_code = HTTP_NO_CONTENT
+    };
+
+    insert_header(&response_204.headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&response_204.headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&response_204.headers, "Access-Control-Allow-Headers", "*");
+
     // 버퍼 할당
     buffer = (char *)malloc(buffer_size_kb * KB);
     if (!buffer) {
@@ -953,6 +970,11 @@ int run_web_server(struct web_server server) {
             goto label_send_response;
         }
 
+        if (request->method == HTTP_OPTIONS) {
+            response = &response_204;
+            goto label_send_response;
+        }
+
         // 라우트 찾기
         found_route = find_route(server.route_table, request->path, request->method);
 
@@ -972,7 +994,7 @@ int run_web_server(struct web_server server) {
         response_str = http_response_stringify(*response);
 
         /* response 가 null 일 경우는 없다고 가정 */
-        if (response != &response_404 && response != &response_500) {
+        if (response != &response_404 && response != &response_500 && response != &response_204) {
             if (response->body)
                 free(response->body);
 
