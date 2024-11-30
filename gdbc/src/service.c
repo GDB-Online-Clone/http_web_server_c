@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <wait.h>
@@ -48,6 +49,29 @@ static int set_FD_CLOEXEC(int fd) {
     }
 }
 
+static pid_t check_pid_alive(pid_t pid) {
+    printf("CHECK PID %d ... ", pid);
+    if (kill(pid, 0) == 0) {
+        printf("GOOD\n");
+        return pid;
+    }
+    return 0;
+}
+
+static int cleanup_child_process(struct process_running *p_info) {
+    if (p_info->is_running == 0) {
+        return 0;
+    }
+    pid_t ret = waitpid(p_info->pid, NULL, WNOHANG);
+    if (ret == 0) {
+        return 0;
+    }
+    close(p_info->to_child_pipe[1]);
+    close(p_info->from_child_pipe[0]);
+
+    p_info->is_running = 0;
+    return 1;
+}
 int build_and_run(const char *path_to_source_code, enum compiler_type compiler_type, const char *compile_options, const char *command_line_args) {
     int pidx = 0;        
     char executable_filename[64];
@@ -203,4 +227,58 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
         free(compile_args);
     }
     return -1;
+}
+
+void show_process_list() {
+    for (int i = 0; i < MAX_PROCESS; i++) {        
+        printf("**[%5d] PID: %7d\tSTATUS: %s\n", i, PROCESSES[i].pid,
+               PROCESSES[i].is_running ? "\033[32mACTIVE\033[0m"
+                                : "\033[31mINACTIVE\033[0m");
+    }
+}
+
+int stop_process(int pidx) {
+    if (kill(PROCESSES[pidx].pid, SIGKILL) == -1) {
+        perror("kill");        
+        return 0;
+    }
+    return 1;
+}
+
+char *get_output_from_child(int pidx) {
+    int available_bytes;
+    if (ioctl(PROCESSES[pidx].from_child_pipe[0], FIONREAD, &available_bytes) == -1) {
+        perror("ioctl");        
+        return -1;        
+    }
+        
+    char *buf = malloc(available_bytes + 1);    
+    ssize_t n;
+    if (n = read(PROCESSES[pidx].from_child_pipe[0], buf, available_bytes) <= 0) {
+        free(buf);
+        if (n == 0) {
+            if (!check_pid_alive(PROCESSES[pidx].pid)) {
+                cleanup_child_process(&PROCESSES[pidx]);
+                return -1;
+            }
+            return NULL;
+        }
+        
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {            
+            return NULL;
+        }
+        printf("CANNOT READ ANYMORE (in any reason)\n");
+        printf("Check is PROCESS DONE ... ");
+        if (cleanup_child_process(&PROCESSES[pidx])) {
+            printf("EXITED\n");
+            return -1;
+        } else {
+            printf("KILL this\n");
+            stop_process(pidx);
+            cleanup_child_process(&PROCESSES[pidx]);
+            return -1;
+        }
+    }
+    buf[available_bytes] = '\0';
+    return buf;
 }

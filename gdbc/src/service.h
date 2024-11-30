@@ -56,3 +56,26 @@ static char *get_compiler_path(enum compiler_type compiler_type) {
  */
 int build_and_run(const char *path_to_source_code, enum compiler_type compiler_type, const char *compile_options, const char *command_line_args);
 
+/**
+ * @brief See processes list for debugging
+ */
+void show_process_list();
+
+/**
+ * @brief Stop the process by given id 
+ * 
+ * @param pidx id of process that `build_and_run` have returned.
+ * @return 1 if success, or 0.
+ */
+int stop_process(int pidx);
+
+/**
+ * @brief Get the output from child process. 
+ * If process has no more output and exited, this function will reclaim that process and return -1.
+ * 
+ * @param pidx id of process that `build_and_run` have returned.
+ * @return char* buffer of output allocated with `malloc`, including stderr and stdout. -1 and 0 represent error.
+ * @retval -1 (== 0xffffff) no more read and process is dead
+ * @retval 0 have no output at now
+ */
+char *get_output_from_child(int pidx);
