@@ -69,3 +69,7 @@ include
 include/*
 libs
 libs/*
+temp
+temp/*
+bins
+bins/*
