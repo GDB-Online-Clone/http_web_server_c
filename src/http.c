@@ -345,24 +345,24 @@ char *http_headers_stringify(struct http_headers *headers) {
         total_length += strlen(header->key) + strlen(header->value) + 4; 
     }
 
-    char *result = (char *)malloc(total_length + 1);
+    char *result = (char *)calloc(total_length + 1, sizeof(char));
     if (result == NULL) {
-        return NULL; // Allocate memory for the headers string
+        return NULL;
     }
 
-    result[0] = '\0'; // Initialize empty string
     for (int i = 0; i < headers->size; i++) {
         struct http_header *header = headers->items[i];
 
-        // No header to process
+        // Ensure the header and its fields are valid
         if (header == NULL || header->key == NULL || header->value == NULL) {
             continue;
         }
 
-        strcat(result, header->key);
-        strcat(result, ": ");
-        strcat(result, header->value);
-        strcat(result, "\r\n");
+        // Safely concatenate strings
+        strncat(result, header->key, strlen(header->key));
+        strncat(result, ": ", 2);
+        strncat(result, header->value, strlen(header->value));
+        strncat(result, "\r\n", 2);
     }
 
     return result;
