@@ -1,17 +1,21 @@
+#ifdef __clang__
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <spawn.h>
 #include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <wait.h>
+#include <sys/wait.h>
 
 #include <webserver/utility.h>
 #include "service.h"
@@ -34,10 +38,10 @@ struct process_running PROCESSES[MAX_PROCESS];
 static int set_FD_CLOEXEC(int fd) {
     // FD_CLOEXEC 플래그 설정
     int flags = fcntl(fd, F_GETFD);
-    if (flags == -1) {
+    if (flags == 0) {
         perror("fcntl - F_GETFD");
         close(fd);
-        return -1;
+        return 0;
     }
 
     flags |= FD_CLOEXEC;
@@ -45,8 +49,9 @@ static int set_FD_CLOEXEC(int fd) {
     if (fcntl(fd, F_SETFD, flags) == -1) {
         perror("fcntl - F_SETFD");
         close(fd);
-        return -1;
+        return 0;
     }
+    return 1;
 }
 
 static pid_t check_pid_alive(pid_t pid) {
@@ -68,6 +73,9 @@ static int cleanup_child_process(struct process_running *p_info) {
     }
     close(p_info->to_child_pipe[1]);
     close(p_info->from_child_pipe[0]);
+
+    p_info->to_child_pipe[1] = -1;
+    p_info->from_child_pipe[0] = -1;
 
     p_info->is_running = 0;
     return 1;
@@ -94,7 +102,10 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     /* actual compiler arguments to be passed with `posix_spawn` */
     char **compile_args = (char **)malloc((compile_option_cnt +  5) * sizeof(char *));
     compile_args[0] = get_compiler_path(compiler_type);
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
     compile_args[1] = path_to_source_code;
+#pragma GCC diagnostic pop
     compile_args[2] = "-o";
     compile_args[3] = executable_filename;
     compile_options_ptr = c_options;
@@ -264,17 +275,17 @@ char *get_output_from_child(int pidx) {
     int available_bytes;
     if (ioctl(PROCESSES[pidx].from_child_pipe[0], FIONREAD, &available_bytes) == -1) {
         perror("ioctl");        
-        return -1;        
+        return (char *)-1;        
     }
         
     char *buf = malloc(available_bytes + 1);    
     ssize_t n;
-    if (n = read(PROCESSES[pidx].from_child_pipe[0], buf, available_bytes) <= 0) {
+    if ((n = read(PROCESSES[pidx].from_child_pipe[0], buf, available_bytes) <= 0)) {
         free(buf);
         if (n == 0) {
             if (!check_pid_alive(PROCESSES[pidx].pid)) {
                 cleanup_child_process(&PROCESSES[pidx]);
-                return -1;
+                return (char *)-1;
             }
             return NULL;
         }
@@ -286,12 +297,12 @@ char *get_output_from_child(int pidx) {
         printf("Check is PROCESS DONE ... ");
         if (cleanup_child_process(&PROCESSES[pidx])) {
             printf("EXITED\n");
-            return -1;
+            return (char *)-1;
         } else {
             printf("KILL this\n");
             stop_process(pidx);
             cleanup_child_process(&PROCESSES[pidx]);
-            return -1;
+            return (char *)-1;
         }
     }
     buf[available_bytes] = '\0';

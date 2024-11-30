@@ -920,7 +920,7 @@ int run_web_server(struct web_server server) {
     while (1) {
         struct route            *found_route;
         struct http_response    *response = NULL;
-        struct http_request     *request;
+        struct http_request     *request = NULL;
         char                    *response_str;
         int                     client_socket;
         ssize_t                 bytes_read;
@@ -942,7 +942,7 @@ int run_web_server(struct web_server server) {
         total_read += bytes_read;
         // 강의자료에 있는 while 문 read 참고해서 구현 : END
 
-
+    
         if (total_read < 0) {
             perror("read");
             close(client_socket);

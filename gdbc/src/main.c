@@ -1,11 +1,16 @@
-#include <ctype.h>
+#ifdef __clang__
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include <webserver/http.h>
 #include <webserver/utility.h>
-#include "service.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <ctype.h>
+#include <assert.h>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wunused-function"
+#include "service.h"
 
 static atomic_int source_code_count = 0;
 
@@ -250,7 +255,7 @@ static char *trim_string(const char *str) {
 static struct http_response *handle_text_mode(struct http_request request) {
     DLOG("Enter '/run/text-mode' route\n");
 
-    int result; // build_and_run 반환값 저장 변수
+    int result = -2; // build_and_run 반환값 저장 변수
 
     // 1. 응답 구조체 초기화
     struct http_response *response = malloc(sizeof(struct http_response));
@@ -466,6 +471,8 @@ static struct http_response *handle_text_mode(struct http_request request) {
         }
     }
 
+    // @TODO 에러 핸들링 필요할 것으로 보임 (임시로 assert 를 걸었습니다)
+    assert(result != -2);
     // PID 반환
     int pid = result;
 
@@ -565,7 +572,7 @@ static struct http_response *handle_text_mode(struct http_request request) {
 static struct http_response *handle_interactive_mode(struct http_request request) {
     DLOG("Enter '/run/interactive-mode' route\n");
 
-    int result; // build_and_run 반환값 저장 변수
+    int result = -2; // build_and_run 반환값 저장 변수
 
     struct http_response *response = malloc(sizeof(struct http_response));
     if (!response) {
@@ -719,6 +726,8 @@ static struct http_response *handle_interactive_mode(struct http_request request
         }
     }
 
+    // @TODO 에러 핸들링 필요할 것으로 보임 (임시로 assert 를 걸었습니다)
+    assert(result != -2);
     // TODO: 본문을 파싱하고 코드 실행
     // PID 반환
     int pid = result;
@@ -790,7 +799,7 @@ static struct http_response *handle_interactive_mode(struct http_request request
 static struct http_response *handle_debugger(struct http_request request) {
     DLOG("Enter '/run/debugger' route\n");
 
-    int result; // build_and_run 반환값 저장 변수
+    int result = -2; // build_and_run 반환값 저장 변수
 
     struct http_response *response = malloc(sizeof(struct http_response));
     if (!response) {
@@ -948,6 +957,8 @@ static struct http_response *handle_debugger(struct http_request request) {
         }
     }
 
+    // @TODO 에러 핸들링 필요할 것으로 보임 (임시로 assert 를 걸었습니다)
+    assert(result != -2);
     // TODO: 실제 디버거 실행 코드 구현
     int pid = result; // 해당 프로세스의 PID
 
@@ -1046,5 +1057,3 @@ int main() {
     run_web_server(app);
     return 0;
 }
-
-#pragma GCC diagnostic pop

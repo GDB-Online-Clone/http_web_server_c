@@ -40,6 +40,7 @@ static char *get_compiler_path(enum compiler_type compiler_type) {
     if (compiler_type == clang_cpp) {
         return "/usr/bin/clang++";
     }
+    return NULL;
 }
 
 /**
