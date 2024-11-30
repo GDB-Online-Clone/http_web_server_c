@@ -245,6 +245,21 @@ int stop_process(int pidx) {
     return 1;
 }
 
+int pass_input_to_child(int pidx, char *input) {
+    if (!check_pid_alive(PROCESSES[pidx].pid)) {
+        printf("CANNOT ACCESS TO PROCESS\n");
+        return -1;
+    }
+
+    ssize_t n;
+    n = write(PROCESSES[pidx].to_child_pipe[1], input, strlen(input));
+    if (n < 0) {
+        printf("PROCESS CANNOT GET INPUT\n");
+        return -1;
+    }
+    return n;
+}
+
 char *get_output_from_child(int pidx) {
     int available_bytes;
     if (ioctl(PROCESSES[pidx].from_child_pipe[0], FIONREAD, &available_bytes) == -1) {

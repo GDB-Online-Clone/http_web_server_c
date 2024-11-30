@@ -70,6 +70,15 @@ void show_process_list();
 int stop_process(int pidx);
 
 /**
+ * @brief Pass input to child process with buffer(=`input`)
+ * 
+ * @param pidx id of process that `build_and_run` have returned.
+ * @return If not under than 0, return value is the number of byte written on stdin of child process.
+ * @retval -1 error to write or process is unavailable.
+ */
+int pass_input_to_child(int pidx, char *input);
+
+/**
  * @brief Get the output from child process. 
  * If process has no more output and exited, this function will reclaim that process and return -1.
  * 
