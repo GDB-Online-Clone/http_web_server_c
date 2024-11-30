@@ -5,12 +5,34 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-static struct http_response *hello_world(struct http_request request) {
+/**
+ * @test curl -X POST http://localhost:10010/stop -H "Content-Type: application/json" -d '{"key": "value"}'
+ */
+static struct http_response *stop_callback(struct http_request request) {
     struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
-    
+
     response->http_version = HTTP_1_1;
     response->status_code = HTTP_OK;
-    response->body = strdup("Hello, World!");
+    response->body = strdup("{'is_success': true}");
+    response->headers = (struct http_headers) {
+        .size = 0,
+        .capacity = 0, 
+        .items = NULL
+    };
+
+    return response;
+}
+
+/**
+ * @test curl -X POST http://localhost:10010/input -H "Content-Type: application/json" -d '{"key": "input_value"}'
+ */
+static struct http_response *input_callback(struct http_request request) 
+{
+    struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
+
+    response->http_version = HTTP_1_1;
+    response->status_code = HTTP_OK;
+    response->body = strdup("{'is_success': true}");
     response->headers = (struct http_headers) {
         .size = 0,
         .capacity = 0,
@@ -20,35 +42,15 @@ static struct http_response *hello_world(struct http_request request) {
     return response;
 }
 
-static struct http_response *find_words(struct http_request request) {
+/**
+ * @test curl -X GET http://localhost:10010/program
+ */
+static struct http_response *program_callback(struct http_request request) {
     struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
-    char *found = request.body;
-    int cnt = 0;
-    while ((found = strstr(found, "aaba"))) {
-        cnt++;
-    }
 
     response->http_version = HTTP_1_1;
     response->status_code = HTTP_OK;
-    char *buf = malloc(1024);
-    sprintf(buf, "%d\n", cnt);
-    response->body = buf;
-    response->headers = (struct http_headers) {
-        .size = 0,
-        .capacity = 0,
-        .items = NULL
-    };
-
-    return response;
-}
-
-static struct http_response *mirror(struct http_request request) {
-    struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
-    char *found = request.body;
-    
-    response->http_version = HTTP_1_1;
-    response->status_code = HTTP_OK;
-    response->body = strdup(request.body);
+    response->body = strdup("{'is_success': true}");
     response->headers = (struct http_headers) {
         .size = 0,
         .capacity = 0,
@@ -315,12 +317,15 @@ static struct http_response* handle_debugger(struct http_request request) {
 int main() {
     struct routes route_table = {};
     init_routes(&route_table);
-    
-    //insert_route(&route_table, "/hello-world", HTTP_GET, hello_world);
-    // 라우트 등록
+
+    insert_route(&route_table, "/stop", HTTP_POST, stop_callback);
+    insert_route(&route_table, "/input", HTTP_POST, input_callback);
+    insert_route(&route_table, "/program", HTTP_GET, program_callback);
+   
     insert_route(&route_table, "/run/text-mode", HTTP_POST, handle_text_mode);
     insert_route(&route_table, "/run/interactive-mode", HTTP_POST, handle_interactive_mode);
     insert_route(&route_table, "/run/debugger", HTTP_POST, handle_debugger);
+
 
     struct web_server app = (struct web_server) {
         .route_table = &route_table,
@@ -329,33 +334,6 @@ int main() {
     };
   
     run_web_server(app);
-
-    
-
-    //   // HTTP 요청 파싱
-    // char *http_request =
-    //     "GET /search?q=example&lang=en HTTP/1.1\r\n"
-    //     "Host: www.example.com\r\n"
-    //     "User-Agent: TestClient/1.0\r\n"
-    //     "Accept: text/html\r\n"
-    //     "\r\n";    
-
-    // struct http_request request = parse_http_request(http_request);
-    
-    
-    // DLOG("[headers]\n");
-    // for (int i = 0; i < request.headers.size; i++) {
-    //     DLOG("%s: %s\n", request.headers.items[i]->key, request.headers.items[i]->value);        
-    // }
-    // DLOG("[method]\n%d\n", request.method);
-    // DLOG("[version]\n%d\n", request.version);
-    // DLOG("[body]\n%s\n", request.body);
-    // DLOG("[path]\n%s\n", request.path);
-
-    //  DLOG("[query parameters]\n");
-    // for (int i = 0; i < request.query_parameters.size; i++) {
-    //     DLOG("%s: %s\n", request.query_parameters.items[i]->key, request.query_parameters.items[i]->value);        
-    // }
     return 0;
 }
 
