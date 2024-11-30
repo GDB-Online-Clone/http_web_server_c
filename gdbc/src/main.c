@@ -147,20 +147,58 @@ static struct http_response *input_callback(struct http_request request) {
 }
 
 /**
- * @test curl -X GET http://localhost:10010/program
+ * @test curl -X GET http://localhost:10010/program?pid=10
  */
 static struct http_response *program_callback(struct http_request request) {
     DLOG("Enter '/program' route\n");
 
-    struct http_response *response = (struct http_response *)malloc(sizeof(struct http_response));
+    // 1. 응답 구조체 초기화
+    struct http_response *response = malloc(sizeof(struct http_response));
+
+    if (!response) {
+        return NULL;
+    }
+
+    struct http_headers response_headers = {
+        .capacity = 8,
+        .size = 0,
+        .items = malloc(8 * sizeof(struct http_header *))};
+
+    if (!response_headers.items) {
+        free(response);
+        return NULL;
+    }
+
+    // 2. 필수 쿼리 파라미터 'pid' 검증
+    struct http_query_parameter *pid_query_parameter = find_query_parameter(&request.query_parameters, "pid");
+    DLOG("%s\n", pid_query_parameter->value);
+
+    if (!pid_query_parameter || !pid_query_parameter->value || strlen(pid_query_parameter->value) == 0) {
+        response->status_code = HTTP_BAD_REQUEST;
+        response->body = strdup("Missing required query parameter: language");
+        response->headers = response_headers;
+        response->http_version = HTTP_1_1;
+
+        return response;
+    }
+
+    // 3. 로직
+    int pid = atoi(pid_query_parameter->value);
+
+    // 4. 성공 응답 생성
+    char response_body[32];
+    snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", pid);
+
+    // 응답 헤더 설정
+    insert_header(&response_headers, "Content-Type", "application/json");
+    insert_header(&response_headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&response_headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&response_headers, "Access-Control-Allow-Headers", "*");
 
     response->http_version = HTTP_1_1;
     response->status_code = HTTP_OK;
-    response->body = strdup("{'is_success': true}");
-    response->headers = (struct http_headers){
-        .size = 0,
-        .capacity = 0,
-        .items = NULL};
+    response->body = strdup(response_body);
+    response->headers = response_headers;
 
     return response;
 }
