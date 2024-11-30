@@ -5,6 +5,8 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
 
+static atomic_int source_code_count = 0;
+
 /**
  * @test curl -X POST http://localhost:10010/stop -H "Content-Type: application/json" -d '{"key": "value"}'
  */
@@ -106,7 +108,7 @@ static struct http_response* handle_text_mode(struct http_request request) {
         return response;
     }
 
-    // 3. 선택 파라미터 검증
+    // 3. 선택 파라미터 검증 -> 없으면 NULL 값 반환
     struct http_query_parameter* compile_opt = 
         find_query_parameter(&request.query_parameters, "compile_option");
     struct http_query_parameter* args = 
@@ -122,6 +124,36 @@ static struct http_response* handle_text_mode(struct http_request request) {
         return response;
     }
 
+    /**
+     * @brief body 내용을 소스코드 파일로 만든다. 
+     * 만드는 파일 이름은 temp/{source_code_count}.txt로 만든다.
+     * 단, 소스코드 파일로 만드는 중 오류가 생기면 response에 500 에러를 담아 반환한다.
+     * 
+     * */ 
+    char source_code_file[32];
+    snprintf(source_code_file, sizeof(source_code_file), "./temp/%d.txt", atomic_fetch_add(&source_code_count, 1));
+
+    FILE *fp = fopen(source_code_file, "w");
+
+    if (!fp) {
+        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+        response->body = strdup("Failed to create source code file");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+
+        return response;
+    }
+
+    if (fprintf(fp, "%s", extract_source_code_from_body(request.body)) < 0 || fclose(fp) != 0) {
+        remove(source_code_file);
+        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+        response->body = strdup("Failed to write source code to file");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+
+        return response;
+    }
+
     // TODO: 본문을 파싱하고 코드 실행
     // 현재는 임시 PID 반환
     int pid = 12345; 
@@ -131,6 +163,9 @@ static struct http_response* handle_text_mode(struct http_request request) {
     snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", pid);
 
     insert_header(&headers, "Content-Type", "application/json");
+    insert_header(&headers,"Access-Control-Allow-Origin", "*");
+    insert_header(&headers,"Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&headers,"Access-Control-Allow-Headers", "Content-Type, Authorization");
     
     response->status_code = HTTP_OK;
     response->body = strdup(response_body);
@@ -204,6 +239,36 @@ static struct http_response* handle_interactive_mode(struct http_request request
        response->http_version = HTTP_1_1;
        return response;
    }
+
+   /**
+     * @brief body 내용을 소스코드 파일로 만든다. 
+     * 만드는 파일 이름은 temp/{source_code_count}.txt로 만든다.
+     * 단, 소스코드 파일로 만드는 중 오류가 생기면 response에 500 에러를 담아 반환한다.
+     * 
+     * */ 
+    char source_code_file[32];
+    snprintf(source_code_file, sizeof(source_code_file), "./temp/%d.txt", atomic_fetch_add(&source_code_count, 1));
+
+    FILE *fp = fopen(source_code_file, "w");
+
+    if (!fp) {
+        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+        response->body = strdup("Failed to create source code file");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+
+        return response;
+    }
+
+    if (fprintf(fp, "%s", extract_source_code_from_body(request.body)) < 0 || fclose(fp) != 0) {
+        remove(source_code_file);
+        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+        response->body = strdup("Failed to write source code to file");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+
+        return response;
+    }
 
    // TODO: 본문을 파싱하고 코드 실행
    // 현재는 임시 PID 반환
@@ -290,6 +355,36 @@ static struct http_response* handle_debugger(struct http_request request) {
         return response;
     }
 
+    /**
+     * @brief body 내용을 소스코드 파일로 만든다. 
+     * 만드는 파일 이름은 temp/{source_code_count}.txt로 만든다.
+     * 단, 소스코드 파일로 만드는 중 오류가 생기면 response에 500 에러를 담아 반환한다.
+     * 
+     * */ 
+    char source_code_file[32];
+    snprintf(source_code_file, sizeof(source_code_file), "./temp/%d.txt", atomic_fetch_add(&source_code_count, 1));
+
+    FILE *fp = fopen(source_code_file, "w");
+
+    if (!fp) {
+        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+        response->body = strdup("Failed to create source code file");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+
+        return response;
+    }
+
+    if (fprintf(fp, "%s", extract_source_code_from_body(request.body)) < 0 || fclose(fp) != 0) {
+        remove(source_code_file);
+        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+        response->body = strdup("Failed to write source code to file");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+
+        return response;
+    }
+
     // TODO: 실제 디버거 실행 코드 구현
     int pid = 12345;  // 임시 PID
 
@@ -315,6 +410,18 @@ static struct http_response* handle_debugger(struct http_request request) {
  * @return int 프로그램 종료 상태
  */
 int main() {
+    
+    // temp 디렉토리 생성
+    struct stat st = {0};
+
+    if (stat("./temp", &st) == -1) {
+        // temp 디렉토리가 없으면 생성 (권한: 0755)
+        if (mkdir("./temp", 0755) == -1) {
+            perror("Failed to create temp directory");
+            return 1;
+        }
+    }
+
     struct routes route_table = {};
     init_routes(&route_table);
 
