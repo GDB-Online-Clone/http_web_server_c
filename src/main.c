@@ -58,6 +58,77 @@ static struct http_response *mirror(struct http_request request) {
     return response;
 }
 
+/**
+ * @brief Handle POST requests to /run/text-mode endpoint
+ *
+ * @param request HTTP request containing JSON body and query parameters
+ * @return struct http_response* Response containing process ID or error
+ */
+static struct http_response* handle_text_mode(struct http_request request) {
+    // 1. 응답 구조체 초기화
+    struct http_response* response = malloc(sizeof(struct http_response));
+    struct http_headers headers = {
+        .capacity = 8,
+        .size = 0,
+        .items = malloc(8 * sizeof(struct http_header*))
+    };
+
+    // 2. Content-Type 헤더 검증
+    struct http_header* content_type = find_header(&request.headers, "Content-Type");
+    if (!content_type || strcmp(content_type->value, "application/json") != 0) {
+        response->status_code = HTTP_BAD_REQUEST;
+        response->body = strdup("Content-Type must be application/json");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+        return response;
+    }
+
+    // 3. 필수 쿼리 파라미터 'language' 검증
+    struct http_query_parameter* language = find_query_parameter(
+        &request.query_parameters, 
+        "language"
+    );
+    if (!language || !language->value || strlen(language->value) == 0) {
+        response->status_code = HTTP_BAD_REQUEST;
+        response->body = strdup("Missing required query parameter: language");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+        return response;
+    }
+
+    // 3. 선택 파라미터 검증
+    struct http_query_parameter* compile_opt = 
+        find_query_parameter(&request.query_parameters, "compile_option");
+    struct http_query_parameter* args = 
+        find_query_parameter(&request.query_parameters, "argument");
+    
+
+    // 4. request body 검증
+    if (!request.body || strlen(request.body) == 0) {
+        response->status_code = HTTP_BAD_REQUEST;
+        response->body = strdup("Missing request body");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+        return response;
+    }
+
+    // TODO: 본문을 파싱하고 코드 실행
+    // 현재는 임시 PID 반환
+    int pid = 12345; 
+
+    // 5. 성공 응답 생성
+    char response_body[32];
+    snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", pid);
+
+    insert_header(&headers, "Content-Type", "application/json");
+    
+    response->status_code = HTTP_OK;
+    response->body = strdup(response_body);
+    response->headers = headers;
+    response->http_version = HTTP_1_1;
+
+    return response;
+}
 
 
 /**
@@ -69,7 +140,9 @@ int main() {
     struct routes route_table = {};
     init_routes(&route_table);
     
-    insert_route(&route_table, "/hello-world", HTTP_GET, hello_world);
+    //insert_route(&route_table, "/hello-world", HTTP_GET, hello_world);
+    // 라우트 등록
+    insert_route(&route_table, "/run/text-mode", HTTP_POST, handle_text_mode);
 
     struct web_server app = (struct web_server) {
         .route_table = &route_table,
