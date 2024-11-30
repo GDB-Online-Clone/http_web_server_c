@@ -514,6 +514,39 @@ static struct http_response *handle_text_mode(struct http_request request) {
         free(args);
     }
 
+    // 쿼리 파라미터 메모리 해제
+    // if (language) {
+    //     if (language->key)
+    //         free(language->key);
+    //     if (language->value)
+    //         free(language->value);
+    //     free(language);
+    // }
+    
+    // if (compiler_type) {
+    //     if (compiler_type->key)
+    //         free(compiler_type->key);
+    //     if (compiler_type->value)
+    //         free(compiler_type->value);
+    //     free(compiler_type);
+    // }
+    
+    // if (compile_opt) {
+    //     if (compile_opt->key)
+    //         free(compile_opt->key);
+    //     if (compile_opt->value)
+    //         free(compile_opt->value);
+    //     free(compile_opt);
+    // }
+    
+    // if (args) {
+    //     if (args->key)
+    //         free(args->key);
+    //     if (args->value)
+    //         free(args->value);
+    //     free(args);
+    // }
+
     // trimmed 문자열 해제
     if (trimmed_compile_opt)
         free(trimmed_compile_opt);
@@ -705,6 +738,39 @@ static struct http_response *handle_interactive_mode(struct http_request request
     response->body = strdup(response_body);
     response->headers = headers;
     response->http_version = HTTP_1_1;
+
+    // 쿼리 파라미터 메모리 해제
+    if (language) {
+        if (language->key)
+            free(language->key);
+        if (language->value)
+            free(language->value);
+        free(language);
+    }
+    
+    if (compiler_type) {
+        if (compiler_type->key)
+            free(compiler_type->key);
+        if (compiler_type->value)
+            free(compiler_type->value);
+        free(compiler_type);
+    }
+    
+    if (compile_opt) {
+        if (compile_opt->key)
+            free(compile_opt->key);
+        if (compile_opt->value)
+            free(compile_opt->value);
+        free(compile_opt);
+    }
+    
+    if (args) {
+        if (args->key)
+            free(args->key);
+        if (args->value)
+            free(args->value);
+        free(args);
+    }
 
     // trimmed 문자열 해제
     if (trimmed_compile_opt)
@@ -900,6 +966,39 @@ static struct http_response *handle_debugger(struct http_request request) {
     response->body = strdup(response_body);
     response->headers = headers;
     response->http_version = HTTP_1_1;
+
+    // 쿼리 파라미터 메모리 해제
+    if (language) {
+        if (language->key)
+            free(language->key);
+        if (language->value)
+            free(language->value);
+        free(language);
+    }
+    
+    if (compiler_type) {
+        if (compiler_type->key)
+            free(compiler_type->key);
+        if (compiler_type->value)
+            free(compiler_type->value);
+        free(compiler_type);
+    }
+    
+    if (compile_opt) {
+        if (compile_opt->key)
+            free(compile_opt->key);
+        if (compile_opt->value)
+            free(compile_opt->value);
+        free(compile_opt);
+    }
+    
+    if (args) {
+        if (args->key)
+            free(args->key);
+        if (args->value)
+            free(args->value);
+        free(args);
+    }
 
     // trimmed 문자열 해제
     if (trimmed_compile_opt)
