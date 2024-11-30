@@ -596,6 +596,8 @@ char* http_response_stringify(struct http_response http_response) {
 enum http_method parse_http_method(const char *method) {
     if (strcmp(method, "GET") == 0) return HTTP_GET;
     if (strcmp(method, "POST") == 0) return HTTP_POST;
+    if (strcmp(method, "PUT") == 0) return HTTP_PUT;
+    if (strcmp(method, "DELETE") == 0) return HTTP_DELETE;
     return HTTP_METHOD_UNKNOWN;
 }
 
