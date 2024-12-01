@@ -172,7 +172,7 @@ struct http_header *parse_http_header(char *header_string) {
         
         header->key = (char*)malloc(length + 1);
         strncpy(header->key, start_of_key, length);
-
+        header->key[length] = '\0';
     } else {
         /* Case of quoted string. now we cannnot perform like above, because ':' can be inside of key name. */
         /* At now, our target is to find ` ": `, double quotes followed by ':'. */
@@ -202,6 +202,7 @@ struct http_header *parse_http_header(char *header_string) {
         
         header->key = (char*)malloc(length + 1);
         strncpy(header->key, start_of_key, length);
+        header->key[length] = '\0';
     }
     
 
@@ -231,7 +232,7 @@ struct http_header *parse_http_header(char *header_string) {
         
         header->value = (char*)malloc(length + 1);
         strncpy(header->value, start_of_value, length);
-
+        header->value[length] = '\0';
     } else {
         /* Case of quoted string. now we cannnot perform like above, because ':' can be inside of value string. */
         /* At now, our target is to find ` "<CRLF> `, double quotes followed by "\r\n". */
@@ -261,6 +262,7 @@ struct http_header *parse_http_header(char *header_string) {
         
         header->value = (char*)malloc(length + 1);
         strncpy(header->value, start_of_value, length);
+        header->value[length] = '\0';
     }
  
     return header;
