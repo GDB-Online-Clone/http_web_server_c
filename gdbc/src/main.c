@@ -14,7 +14,7 @@
 
 static atomic_int source_code_count = 0;
 
-static char* extract_source_code_from_body(const char* body) {
+char* extract_source_code_from_body(const char* body) {
     if (!body) {
         return NULL;
     }
