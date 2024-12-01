@@ -1006,10 +1006,24 @@ int run_web_server(struct web_server server) {
             free(response);
         }
 
-        // 클라이언트에 응답 전송
-        write(client_socket, response_str, strlen(response_str));
-        // @TODO 에러 시 서버 로그 추가
-        // @TODO 로깅 함수 utilty에 추가
+        // 응답 전송
+        ssize_t total_written = 0;
+        size_t response_len = strlen(response_str);
+
+        while (total_written < response_len) {
+            ssize_t written = write(client_socket,
+                                    response_str + total_written,
+                                    response_len - total_written);
+            if (written <= 0) {
+                if (errno == EINTR)
+                    continue;
+                break;
+            }
+            total_written += written;
+        }
+
+        // 응답이 완전히 전송되도록 보장
+        shutdown(client_socket, SHUT_WR);
 
         // 메모리 정리
         free(response_str);
@@ -1018,11 +1032,12 @@ int run_web_server(struct web_server server) {
             destruct_http_request(request);
             free(request);
         }
-        close(client_socket);  // 클라이언트 소켓 닫기        
+
+        close(client_socket);
     }
 
-    free(buffer);  // 버퍼 메모리 해제
-    close(server_fd);  // 서버 소켓 닫기
+    free(buffer);     // 버퍼 메모리 해제
+    close(server_fd); // 서버 소켓 닫기
     return 0;
 }
 
