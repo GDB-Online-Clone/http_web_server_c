@@ -479,8 +479,26 @@ static struct http_response *program_callback(struct http_request request) {
     int pid = atoi(pid_query_parameter->value);
 
     // 4. 성공 응답 생성
-    char response_body[32];
-    snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", pid);
+    //char response_body[32];
+    //snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", pid);
+    char *output = get_output_from_child(pid);
+    if (!output) {
+        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
+        response->body = strdup("Failed to get output from child process");
+        response->headers = response_headers;
+        response->http_version = HTTP_1_1;
+
+        return response;
+    }
+    
+    int response_body_size = snprintf(NULL, 0, "{\"pid\": %d, \"output\": \"%s\"}", pid, output) + 1;
+    char *response_body = malloc(response_body_size);
+    if (!response_body) {
+        free(output);
+        return NULL;
+    }
+    snprintf(response_body, response_body_size, "{\"pid\": %d, \"output\": \"%s\"}", pid, output);
+    free(output);
 
     // 응답 헤더 설정
     insert_header(&response_headers, "Content-Type", "application/json");
