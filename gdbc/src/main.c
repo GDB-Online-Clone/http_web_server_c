@@ -856,6 +856,15 @@ int main() {
         }
     }
 
+    // bins 디렉토리 생성
+    if (stat("./bins", &st) == -1) {
+        // bins 디렉토리가 없으면 생성 (권한: 0755)
+        if (mkdir("./bins", 0755) == -1) {
+            perror("Failed to create bins directory");
+            return 1;
+        }
+    }
+
     struct routes route_table = {};
     init_routes(&route_table);
 
