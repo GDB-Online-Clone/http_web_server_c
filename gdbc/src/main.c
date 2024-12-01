@@ -281,13 +281,20 @@ static struct http_response *execute_program(const struct run_handler_config *co
         return response;
     }
 
-    if (fprintf(fp, "%s", config->source_code) < 0 || fclose(fp) != 0) {
+    if (fprintf(fp, "%s", config->source_code) < 0) {
+        if (fclose(fp) != 0) {
+            perror("fclose");            
+        }
         remove(source_code_file);
         response->status_code = HTTP_INTERNAL_SERVER_ERROR;
         response->body = strdup("Failed to write source code to file");
         response->headers = headers;
         response->http_version = HTTP_1_1;
         return response;
+    }
+    
+    if (fclose(fp) != 0) {
+        perror("fclose");            
     }
 
     // 컴파일러 선택 및 실행
@@ -421,7 +428,7 @@ static struct http_response *stop_callback(struct http_request request) {
 
     if (!pid_query_parameter || !pid_query_parameter->value || strlen(pid_query_parameter->value) == 0) {
         response->status_code = HTTP_BAD_REQUEST;
-        response->body = strdup("Missing required query parameter: language");
+        response->body = strdup("Missing required query parameter: pid");
         response->headers = response_headers;
         response->http_version = HTTP_1_1;
 
@@ -526,15 +533,13 @@ static struct http_response *program_callback(struct http_request request) {
 
     // 1. 응답 구조체 초기화
     struct http_response *response = malloc(sizeof(struct http_response));
-
-    if (!response) {
-        return NULL;
-    }
+    if (!response) return NULL;
 
     struct http_headers response_headers = {
         .capacity = 8,
         .size = 0,
-        .items = malloc(8 * sizeof(struct http_header *))};
+        .items = malloc(8 * sizeof(struct http_header *))
+    };
 
     if (!response_headers.items) {
         free(response);
@@ -542,15 +547,15 @@ static struct http_response *program_callback(struct http_request request) {
     }
 
     // 2. 필수 쿼리 파라미터 'pid' 검증
-    struct http_query_parameter *pid_query_parameter = find_query_parameter(&request.query_parameters, "pid");
-    DLOG("%s\n", pid_query_parameter->value);
-
-    if (!pid_query_parameter || !pid_query_parameter->value || strlen(pid_query_parameter->value) == 0) {
+    struct http_query_parameter *pid_query_parameter = 
+        find_query_parameter(&request.query_parameters, "pid");
+    
+    if (!pid_query_parameter || !pid_query_parameter->value || 
+        strlen(pid_query_parameter->value) == 0) {
         response->status_code = HTTP_BAD_REQUEST;
-        response->body = strdup("Missing required query parameter: language");
+        response->body = strdup("Missing required query parameter: pid");
         response->headers = response_headers;
         response->http_version = HTTP_1_1;
-
         return response;
     }
 
