@@ -75,6 +75,7 @@ int stop_process(int pidx);
  * 
  * @param pidx id of process that `build_and_run` have returned.
  * @return If not under than 0, return value is the number of byte written on stdin of child process.
+ * @retval -2 (== 0xfffffe) given `pidx` argument is invalid
  * @retval -1 error to write or process is unavailable.
  */
 int pass_input_to_child(int pidx, char *input);
@@ -85,7 +86,8 @@ int pass_input_to_child(int pidx, char *input);
  * 
  * @param pidx id of process that `build_and_run` have returned.
  * @return char* buffer of output allocated with `malloc`, including stderr and stdout. -1 and 0 represent error.
+ * @retval -2 (== 0xfffffe) given argument is invalid
  * @retval -1 (== 0xffffff) no more read and process is dead
- * @retval 0 have no output at now
+ * @retval 0 have no output at now 
  */
 char *get_output_from_child(int pidx);

@@ -35,6 +35,14 @@ static atomic_int pcnt = 0;
  */
 struct process_running PROCESSES[MAX_PROCESS];
 
+static inline int check_pidx(int pidx) {
+    if (pidx < 0 || pidx >= MAX_PROCESS || !PROCESSES[pidx].is_running) {
+        DLOGV("PID is invalid\n");
+        return 0;
+    }
+    return 1;
+}
+
 static int set_FD_CLOEXEC(int fd) {
     int flags = fcntl(fd, F_GETFD);
     if (flags == -1) {
@@ -248,6 +256,8 @@ void show_process_list() {
 }
 
 int stop_process(int pidx) {
+    if (check_pidx(pidx) == 0)
+        return 0;
     if (kill(PROCESSES[pidx].pid, SIGKILL) == -1) {
         perror("kill");        
         return 0;
@@ -256,6 +266,8 @@ int stop_process(int pidx) {
 }
 
 int pass_input_to_child(int pidx, char *input) {
+    if (check_pidx(pidx) == 0)
+        return -2;
     if (!check_pid_alive(PROCESSES[pidx].pid)) {
         printf("CANNOT ACCESS TO PROCESS\n");
         return -1;
@@ -271,6 +283,8 @@ int pass_input_to_child(int pidx, char *input) {
 }
 
 char *get_output_from_child(int pidx) {
+    if (check_pidx(pidx) == 0)
+        return -2;
     int available_bytes;
     if (ioctl(PROCESSES[pidx].from_child_pipe[0], FIONREAD, &available_bytes) == -1) {
         perror("ioctl");        
