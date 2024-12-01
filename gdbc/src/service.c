@@ -36,9 +36,8 @@ static atomic_int pcnt = 0;
 struct process_running PROCESSES[MAX_PROCESS];
 
 static int set_FD_CLOEXEC(int fd) {
-    // FD_CLOEXEC 플래그 설정
     int flags = fcntl(fd, F_GETFD);
-    if (flags == 0) {
+    if (flags == -1) {
         perror("fcntl - F_GETFD");
         close(fd);
         return 0;
