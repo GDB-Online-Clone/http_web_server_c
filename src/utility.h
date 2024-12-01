@@ -21,6 +21,10 @@
 #define DLOG(fmt, args...) /* Don't do anything in release builds */
 #endif
 
+struct optional;
+
+typedef struct optional optional_t;
+
 /**
  * @brief Check input is white-space.
  * 
@@ -67,3 +71,19 @@ inline static int url_path_cmp(const char *lhs, const char *rhs) {
         }
     }
 }
+
+/**
+ * @brief Pair of integer and ptr. 
+ * The basic usage can be used when you want to return the function's state code 
+ * and non-local variable return values at the same time.
+ */
+struct optional {
+    /**
+     * @brief Integer value (may represent status)
+     */
+    int stat;
+    /**
+     * @brief Address value (may represent object allocated with malloc)
+     */
+    void *value;
+};
