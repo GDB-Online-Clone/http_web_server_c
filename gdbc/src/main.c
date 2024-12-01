@@ -14,6 +14,85 @@
 
 static atomic_int source_code_count = 0;
 
+char* extract_source_code_from_body(const char* body) {
+    if (!body) {
+        return NULL;
+    }
+
+    // "source_code" 키 찾기
+    const char* key = "\"source_code\"";
+    char* key_pos = strstr(body, key);
+    if (!key_pos) {
+        return NULL;
+    }
+
+    // 키 이후 위치로 포인터 이동
+    key_pos += strlen(key);
+
+    // 키 다음의 콜론 찾기
+    char* colon_pos = strchr(key_pos, ':');
+    if (!colon_pos) {
+        return NULL;
+    }
+
+    // 콜론 다음의 공백 문자 건너뛰기
+    char* value_start = colon_pos + 1;
+    while (*value_start == ' ' || *value_start == '\t' || *value_start == '\n' || *value_start == '\r') {
+        value_start++;
+    }
+
+    // 값이 따옴표로 시작하는지 확인
+    if (*value_start != '"') {
+        return NULL;
+    }
+    value_start++; // 시작 따옴표 건너뛰기
+
+    // 종료 따옴표 찾기
+    char* value_end = value_start;
+    while (*value_end && *value_end != '"') {
+        if (*value_end == '\\' && *(value_end + 1)) {
+            value_end += 2; // 이스케이프된 문자 건너뛰기
+        } else {
+            value_end++;
+        }
+    }
+
+    if (*value_end != '"') {
+        return NULL;
+    }
+
+    // 결과 문자열 길이 계산 및 메모리 할당
+    size_t value_length = value_end - value_start;
+    char* result = (char*)malloc(value_length + 1);
+    if (!result) {
+        return NULL;
+    }
+
+    // 값 복사 및 이스케이프 문자 처리
+    char* dest = result;
+    const char* src = value_start;
+    while (src < value_end) {
+        if (*src == '\\' && *(src + 1)) {
+            src++;
+            switch (*src) {
+                case 'n': *dest = '\n'; break;
+                case 'r': *dest = '\r'; break;
+                case 't': *dest = '\t'; break;
+                case '\\': *dest = '\\'; break;
+                case '"': *dest = '"'; break;
+                default: *dest = *src;
+            }
+        } else {
+            *dest = *src;
+        }
+        dest++;
+        src++;
+    }
+    *dest = '\0';
+
+    return result;
+}
+
 /**
  * @brief Trim whitespace from the beginning and end of a string
  * @param str String to trim
