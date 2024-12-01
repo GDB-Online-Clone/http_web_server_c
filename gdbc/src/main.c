@@ -90,6 +90,8 @@ static struct http_response *validate_run_request(
 
     // 1. Content-Type 헤더 검증
     struct http_header *content_type = find_header(&request.headers, "Content-Type");
+    DLOGV("%u\n", (unsigned int)content_type);
+    
     if (!content_type || strcmp(content_type->value, "application/json") != 0) {
         response->status_code = HTTP_BAD_REQUEST;
         response->body = strdup("Content-Type must be application/json");
@@ -171,10 +173,28 @@ static struct http_response *execute_program(const struct run_handler_config *co
         return NULL;
     }
 
+    // 응답 헤더 설정
+    insert_header(&headers, "Content-Type", "application/json");
+    insert_header(&headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&headers, "Access-Control-Allow-Methods",
+                  "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&headers, "Access-Control-Allow-Headers", "*");
+
     // 소스 파일 생성
     char source_code_file[32];
-    snprintf(source_code_file, sizeof(source_code_file),
-             "./temp/%d.txt", atomic_fetch_add(&source_code_count, 1));
+    if(strcmp(config->language, "c") == 0){
+        snprintf(source_code_file, sizeof(source_code_file),
+             "./temp/%d.c", atomic_fetch_add(&source_code_count, 1));
+    } else if(strcmp(config->language, "cpp") == 0){
+        snprintf(source_code_file, sizeof(source_code_file),
+             "./temp/%d.cpp", atomic_fetch_add(&source_code_count, 1));
+    } else {
+        response->status_code = HTTP_BAD_REQUEST;
+        response->body = strdup("Invalid language specified");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+        return response;
+    }
 
     FILE *fp = fopen(source_code_file, "w");
     if (!fp) {
@@ -195,7 +215,7 @@ static struct http_response *execute_program(const struct run_handler_config *co
     }
 
     // 컴파일러 선택 및 실행
-    int result = -1;
+    int result = -2;
     if (strcmp(config->language, "c") == 0) {
         if (strcmp(config->compiler_type, "gcc") == 0) {
             result = build_and_run(source_code_file, gcc_c,
@@ -203,6 +223,12 @@ static struct http_response *execute_program(const struct run_handler_config *co
         } else if (strcmp(config->compiler_type, "clang") == 0) {
             result = build_and_run(source_code_file, clang_c,
                                    config->compile_options, config->command_line_args);
+        } else {
+            response->status_code = HTTP_BAD_REQUEST;
+            response->body = strdup("Invalid compiler type specified");
+            response->headers = headers;
+            response->http_version = HTTP_1_1;
+            return response;
         }
     } else if (strcmp(config->language, "cpp") == 0) {
         if (strcmp(config->compiler_type, "gcc") == 0) {
@@ -211,12 +237,30 @@ static struct http_response *execute_program(const struct run_handler_config *co
         } else if (strcmp(config->compiler_type, "clang") == 0) {
             result = build_and_run(source_code_file, clang_cpp,
                                    config->compile_options, config->command_line_args);
+        } else {
+            response->status_code = HTTP_BAD_REQUEST;
+            response->body = strdup("Invalid compiler type specified");
+            response->headers = headers;
+            response->http_version = HTTP_1_1;
+            return response;
         }
+    } else {
+        response->status_code = HTTP_BAD_REQUEST;
+        response->body = strdup("Invalid language specified");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+        return response;
     }
 
-    if (result < 0) {
+    if (result == -1) {
         response->status_code = HTTP_INTERNAL_SERVER_ERROR;
         response->body = strdup("Failed to build and run program");
+        response->headers = headers;
+        response->http_version = HTTP_1_1;
+        return response;
+    } else if(result == -2) {
+        response->status_code = HTTP_BAD_REQUEST;
+        response->body = strdup("Invaild request");
         response->headers = headers;
         response->http_version = HTTP_1_1;
         return response;
@@ -225,12 +269,6 @@ static struct http_response *execute_program(const struct run_handler_config *co
     // 성공 응답 생성
     char response_body[32];
     snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", result);
-
-    insert_header(&headers, "Content-Type", "application/json");
-    insert_header(&headers, "Access-Control-Allow-Origin", "*");
-    insert_header(&headers, "Access-Control-Allow-Methods",
-                  "GET, POST, PUT, DELETE, OPTIONS");
-    insert_header(&headers, "Access-Control-Allow-Headers", "*");
 
     response->status_code = HTTP_OK;
     response->body = strdup(response_body);
