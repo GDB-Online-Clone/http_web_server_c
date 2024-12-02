@@ -356,6 +356,12 @@ static struct http_response *stop_callback(struct http_request request) {
         return NULL;
     }
 
+    // 응답 헤더 설정
+    insert_header(&response_headers, "Content-Type", "application/json");
+    insert_header(&response_headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&response_headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&response_headers, "Access-Control-Allow-Headers", "*");
+
     // 2. Content-Type 헤더 검증
     struct http_header *content_type_header = find_header(&request.headers, "Content-Type");
 
@@ -382,16 +388,11 @@ static struct http_response *stop_callback(struct http_request request) {
 
     // 4. 로직
     int pid = atoi(pid_query_parameter->value);
+    stop_process(pid);
 
     // 5. 성공 응답 생성
     char response_body[32];
     snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", pid);
-
-    // 응답 헤더 설정
-    insert_header(&response_headers, "Content-Type", "application/json");
-    insert_header(&response_headers, "Access-Control-Allow-Origin", "*");
-    insert_header(&response_headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    insert_header(&response_headers, "Access-Control-Allow-Headers", "*");
 
     response->http_version = HTTP_1_1;
     response->status_code = HTTP_OK;
