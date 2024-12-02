@@ -91,46 +91,33 @@ static struct http_response *validate_run_request(
     }
 
     // 1. Content-Type 헤더 검증
-    struct http_header *content_type = find_header(&request.headers, "Content-Type");
-    DLOGV("%u\n", (unsigned int)content_type);
+    struct http_header *content_type = find_header(&request.headers, "Content-Type");    
     
-    if (!content_type || strcmp(content_type->value, "application/json") != 0) {
-        response->status_code = HTTP_BAD_REQUEST;
+    if (!content_type || strcmp(content_type->value, "application/json") != 0) {        
         response->body = strdup("Content-Type must be application/json");
-        response->headers = headers;
-        response->http_version = HTTP_1_1;
-        return response;
+        goto validate_error;
     }
 
     // 2. language 파라미터 검증
     struct http_query_parameter *language =
         find_query_parameter(&request.query_parameters, "language");
     if (!language || !language->value || strlen(language->value) == 0) {
-        response->status_code = HTTP_BAD_REQUEST;
         response->body = strdup("Missing required query parameter: language");
-        response->headers = headers;
-        response->http_version = HTTP_1_1;
-        return response;
+        goto validate_error;
     }
 
     // 3. compiler_type 파라미터 검증
     struct http_query_parameter *compiler_type =
         find_query_parameter(&request.query_parameters, "compiler_type");
     if (!compiler_type || !compiler_type->value || strlen(compiler_type->value) == 0) {
-        response->status_code = HTTP_BAD_REQUEST;
         response->body = strdup("Missing required query parameter: compiler_type");
-        response->headers = headers;
-        response->http_version = HTTP_1_1;
-        return response;
+        goto validate_error;
     }
 
     // 4. 요청 본문 검증
-    if (!request.body || strlen(request.body) == 0) {
-        response->status_code = HTTP_BAD_REQUEST;
+    if (!request.body || strlen(request.body) == 0) {        
         response->body = strdup("Missing request body");
-        response->headers = headers;
-        response->http_version = HTTP_1_1;
-        return response;
+        goto validate_error;
     }
 
     // 5. 선택적 파라미터 처리
@@ -144,9 +131,9 @@ static struct http_response *validate_run_request(
 
     if (request_body == NULL) {
         DLOGV("informed `parse failed`\n");
-        destruct_http_headers(&headers);
-        free(response);
-        return NULL;
+        destruct_http_headers(&headers);        
+        response->body = strdup("JSON data is malformed");        
+        goto validate_error;
     }
 
     // 구성 저장
@@ -162,6 +149,12 @@ static struct http_response *validate_run_request(
     free(response);
 
     return NULL;
+
+    validate_error:
+    response->status_code = HTTP_BAD_REQUEST;    
+    response->headers = headers;
+    response->http_version = HTTP_1_1;
+    return response;
 }
 
 /**
