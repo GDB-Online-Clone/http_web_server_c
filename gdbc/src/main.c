@@ -9,168 +9,11 @@
 #include <stdlib.h>
 #include <webserver/http.h>
 #include <webserver/utility.h>
+#include <webserver/json.h>
 
 #include "service.h"
 
 static atomic_int source_code_count = 0;
-
-char* extract_source_code_from_body(const char* body) {
-    if (!body) {
-        return NULL;
-    }
-
-    // "source_code" 키 찾기
-    const char* key = "\"source_code\"";
-    char* key_pos = strstr(body, key);
-    if (!key_pos) {
-        return NULL;
-    }
-
-    // 키 이후 위치로 포인터 이동
-    key_pos += strlen(key);
-
-    // 키 다음의 콜론 찾기
-    char* colon_pos = strchr(key_pos, ':');
-    if (!colon_pos) {
-        return NULL;
-    }
-
-    // 콜론 다음의 공백 문자 건너뛰기
-    char* value_start = colon_pos + 1;
-    while (*value_start == ' ' || *value_start == '\t' || *value_start == '\n' || *value_start == '\r') {
-        value_start++;
-    }
-
-    // 값이 따옴표로 시작하는지 확인
-    if (*value_start != '"') {
-        return NULL;
-    }
-    value_start++; // 시작 따옴표 건너뛰기
-
-    // 종료 따옴표 찾기
-    char* value_end = value_start;
-    while (*value_end && *value_end != '"') {
-        if (*value_end == '\\' && *(value_end + 1)) {
-            value_end += 2; // 이스케이프된 문자 건너뛰기
-        } else {
-            value_end++;
-        }
-    }
-
-    if (*value_end != '"') {
-        return NULL;
-    }
-
-    // 결과 문자열 길이 계산 및 메모리 할당
-    size_t value_length = value_end - value_start;
-    char* result = (char*)malloc(value_length + 1);
-    if (!result) {
-        return NULL;
-    }
-
-    // 값 복사 및 이스케이프 문자 처리
-    char* dest = result;
-    const char* src = value_start;
-    while (src < value_end) {
-        if (*src == '\\' && *(src + 1)) {
-            src++;
-            switch (*src) {
-                case 'n': *dest = '\n'; break;
-                case 'r': *dest = '\r'; break;
-                case 't': *dest = '\t'; break;
-                case '\\': *dest = '\\'; break;
-                case '"': *dest = '"'; break;
-                default: *dest = *src;
-            }
-        } else {
-            *dest = *src;
-        }
-        dest++;
-        src++;
-    }
-    *dest = '\0';
-
-    return result;
-}
-
-char* extract_stdin_from_body(const char* body) {
-    if (!body) {
-        return NULL;
-    }
-
-    // "stdin" 키 찾기
-    const char* key = "\"stdin\"";
-    char* key_pos = strstr(body, key);
-    if (!key_pos) {
-        return NULL;
-    }
-
-    // 키 이후 위치로 포인터 이동
-    key_pos += strlen(key);
-
-    // 키 다음의 콜론 찾기
-    char* colon_pos = strchr(key_pos, ':');
-    if (!colon_pos) {
-        return NULL;
-    }
-
-    // 콜론 다음의 공백 문자 건너뛰기
-    char* value_start = colon_pos + 1;
-    while (*value_start == ' ' || *value_start == '\t' || *value_start == '\n' || *value_start == '\r') {
-        value_start++;
-    }
-
-    // 값이 따옴표로 시작하는지 확인
-    if (*value_start != '"') {
-        return NULL;
-    }
-    value_start++; // 시작 따옴표 건너뛰기
-
-    // 종료 따옴표 찾기
-    char* value_end = value_start;
-    while (*value_end && *value_end != '"') {
-        if (*value_end == '\\' && *(value_end + 1)) {
-            value_end += 2; // 이스케이프된 문자 건너뛰기
-        } else {
-            value_end++;
-        }
-    }
-
-    if (*value_end != '"') {
-        return NULL;
-    }
-
-    // 결과 문자열 길이 계산 및 메모리 할당
-    size_t value_length = value_end - value_start;
-    char* result = (char*)malloc(value_length + 1);
-    if (!result) {
-        return NULL;
-    }
-
-    // 값 복사 및 이스케이프 문자 처리
-    char* dest = result;
-    const char* src = value_start;
-    while (src < value_end) {
-        if (*src == '\\' && *(src + 1)) {
-            src++;
-            switch (*src) {
-                case 'n': *dest = '\n'; break;
-                case 'r': *dest = '\r'; break;
-                case 't': *dest = '\t'; break;
-                case '\\': *dest = '\\'; break;
-                case '"': *dest = '"'; break;
-                default: *dest = *src;
-            }
-        } else {
-            *dest = *src;
-        }
-        dest++;
-        src++;
-    }
-    *dest = '\0';
-
-    return result;
-}
 
 /**
  * @brief Trim whitespace from the beginning and end of a string
@@ -219,6 +62,7 @@ struct run_handler_config {
     const char *compiler_type;     /**< Compiler to use (gcc/clang) */
     const char *compile_options;   /**< Additional compiler options */
     const char *command_line_args; /**< Command line arguments for the program */
+    const json_object_t *parsed_body /**< parsed request body by `parse_json()` */
 };
 
 /**
@@ -295,12 +139,23 @@ static struct http_response *validate_run_request(
     struct http_query_parameter *args =
         find_query_parameter(&request.query_parameters, "argument");
 
+
+    json_object_t *request_body = parse_json(request.body);
+
+    if (request_body == NULL) {
+        DLOGV("informed `parse failed`\n");
+        destruct_http_headers(&headers);
+        free(response);
+        return NULL;
+    }
+
     // 구성 저장
     config->language = language->value;
     config->compiler_type = compiler_type->value;
-    config->source_code = extract_source_code_from_body(request.body);
+    config->source_code = find_json_element(request_body, "source_code")->value;
     config->compile_options = compile_opt ? trim_string(compile_opt->value) : NULL;
     config->command_line_args = args ? trim_string(args->value) : NULL;
+    config->parsed_body = request_body;
 
     // 임시 응답 구조체 정리
     destruct_http_headers(&headers);
@@ -428,6 +283,15 @@ static struct http_response *execute_program(const struct run_handler_config *co
         return response;
     }
 
+    char *input_data = find_json_element(config->parsed_body, "stdin");
+    if (input_data) {
+        int pass_input_res = pass_input_to_child(result, input_data);
+        assert(pass_input_res != -2);
+        if (pass_input_res == -1) {
+            DLOGV("ERROR OCCURED (pass input)\n");
+        }
+    }
+
     // 성공 응답 생성
     char response_body[32];
     snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", result);
@@ -463,6 +327,8 @@ static struct http_response *handle_run_request(struct http_request request) {
         free((void *)config.compile_options);
     if (config.command_line_args)
         free((void *)config.command_line_args);
+    if (config.parsed_body)
+        free((void *)config.parsed_body);
 
     return response;
 }
