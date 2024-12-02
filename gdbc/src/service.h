@@ -51,11 +51,12 @@ static char *get_compiler_path(enum compiler_type compiler_type) {
  * NULL is considered as nothing. Each options should be seperated by whitespace and trimmed.
  * @param command_line_args Command line arguments for run process. Do not need to pass executable file name. 
  * NULL is considered as nothing. Each options should be seperated by whitespace and trimmed.
+ * @param is_gdb flag to run gdb
  * @return Successfully do fork, at least, return non minus integers that represents for id of process. Or return -1.
  * @retval -1 Failed to reach to step to `fork`.
  * @note Arguments need to have lifetime that is longer than this function.
  */
-int build_and_run(const char *path_to_source_code, enum compiler_type compiler_type, const char *compile_options, const char *command_line_args);
+int build_and_run(const char *path_to_source_code, enum compiler_type compiler_type, const char *compile_options, const char *command_line_args, int is_gdb);
 
 /**
  * @brief See processes list for debugging

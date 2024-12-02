@@ -61,8 +61,9 @@ struct run_handler_config {
     const char *language;          /**< Programming language (c/cpp) */
     const char *compiler_type;     /**< Compiler to use (gcc/clang) */
     const char *compile_options;   /**< Additional compiler options */
-    const char *command_line_args; /**< Command line arguments for the program */
-    const json_object_t *parsed_body /**< parsed request body by `parse_json()` */
+    const char *command_line_args; /**< Command line arguments for the program */    
+    const json_object_t *parsed_body; /**< parsed request body by `parse_json()` */
+    int is_gdb; /**< flag to run gdb */
 };
 
 /**
@@ -235,10 +236,10 @@ static struct http_response *execute_program(const struct run_handler_config *co
     if (strcmp(config->language, "c") == 0) {
         if (strcmp(config->compiler_type, "gcc") == 0) {
             result = build_and_run(source_code_file, gcc_c,
-                                   config->compile_options, config->command_line_args);
+                                   config->compile_options, config->command_line_args, config->is_gdb);
         } else if (strcmp(config->compiler_type, "clang") == 0) {
             result = build_and_run(source_code_file, clang_c,
-                                   config->compile_options, config->command_line_args);
+                                   config->compile_options, config->command_line_args, config->is_gdb);
         } else {
             response->status_code = HTTP_BAD_REQUEST;
             response->body = strdup("Invalid compiler type specified");
@@ -249,10 +250,10 @@ static struct http_response *execute_program(const struct run_handler_config *co
     } else if (strcmp(config->language, "cpp") == 0) {
         if (strcmp(config->compiler_type, "gcc") == 0) {
             result = build_and_run(source_code_file, gcc_cpp,
-                                   config->compile_options, config->command_line_args);
+                                   config->compile_options, config->command_line_args, config->is_gdb);
         } else if (strcmp(config->compiler_type, "clang") == 0) {
             result = build_and_run(source_code_file, clang_cpp,
-                                   config->compile_options, config->command_line_args);
+                                   config->compile_options, config->command_line_args, config->is_gdb);
         } else {
             response->status_code = HTTP_BAD_REQUEST;
             response->body = strdup("Invalid compiler type specified");
@@ -309,7 +310,7 @@ static struct http_response *execute_program(const struct run_handler_config *co
  * @param request HTTP request containing execution parameters
  * @return struct http_response* Response containing execution results or error
  */
-static struct http_response *handle_run_request(struct http_request request) {
+static struct http_response *handle_run_request(struct http_request request, int is_gdb) {
     struct run_handler_config config = {0};
 
     // 요청 검증
@@ -318,7 +319,7 @@ static struct http_response *handle_run_request(struct http_request request) {
         DLOGV("validate failed\n");
         return validation_response;
     }    
-
+    config.is_gdb = is_gdb;
     // 프로그램 실행
     struct http_response *response = execute_program(&config);
 
@@ -572,7 +573,7 @@ static struct http_response *program_callback(struct http_request request) {
 static struct http_response *handle_text_mode(struct http_request request) {
     DLOG("Enter '/run/text-mode' route\n");
 
-    return handle_run_request(request);
+    return handle_run_request(request, 0);
 }
 
 /**
@@ -583,7 +584,7 @@ static struct http_response *handle_text_mode(struct http_request request) {
  */
 static struct http_response *handle_interactive_mode(struct http_request request) {
     DLOG("Enter '/run/interactive-mode' route\n");
-    return handle_run_request(request);
+    return handle_run_request(request, 0);
 }
 
 /**
@@ -594,7 +595,7 @@ static struct http_response *handle_interactive_mode(struct http_request request
  */
 static struct http_response *handle_debugger(struct http_request request) {
     DLOG("Enter '/run/debugger' route\n");
-    return handle_run_request(request);
+    return handle_run_request(request, 1);
 }
 
 /**

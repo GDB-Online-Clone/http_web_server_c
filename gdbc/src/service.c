@@ -87,7 +87,8 @@ static int cleanup_child_process(struct process_running *p_info) {
     p_info->is_running = 0;
     return 1;
 }
-int build_and_run(const char *path_to_source_code, enum compiler_type compiler_type, const char *compile_options, const char *command_line_args) {
+
+int build_and_run(const char *path_to_source_code, enum compiler_type compiler_type, const char *compile_options, const char *command_line_args, int is_gdb) {
     int pidx = 0;        
     char executable_filename[64];
     sprintf(executable_filename, "bins/%d.out", pcnt++);    
@@ -107,6 +108,7 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     }
 
     /* actual compiler arguments to be passed with `posix_spawn` */
+    compile_option_cnt += is_gdb;
     char **compile_args = (char **)malloc((compile_option_cnt +  5) * sizeof(char *));
     compile_args[0] = get_compiler_path(compiler_type);
 #pragma GCC diagnostic push 
@@ -115,8 +117,11 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
 #pragma GCC diagnostic pop
     compile_args[2] = "-o";
     compile_args[3] = executable_filename;
+    if (is_gdb) {
+        compile_args[4] = "-g";
+    }
     compile_options_ptr = c_options;
-    for (int i = 4; i < 4 + compile_option_cnt; i++) {
+    for (int i = 4 + is_gdb; i < 4 + compile_option_cnt; i++) {
         compile_args[i] = compile_options_ptr;
         compile_options_ptr = strstr(compile_options_ptr, " ");
         *compile_options_ptr = '\0';
@@ -163,7 +168,7 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
         dup2(PROCESSES[pidx].to_child_pipe[0], STDIN_FILENO);
         close(PROCESSES[pidx].to_child_pipe[0]);
 
-        /* 목표 프로세스 실행 */        
+        /* 목표 프로세스 실행 */
         pid_t compiler_pid;
         int compiler_status;        
         for (int i = 0; compile_args[i]; i++) {
@@ -196,17 +201,21 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
                 cl_args_ptr++;
             }
         }
-
+        
         /* actual compiler arguments to be passed with `posix_spawn` */
+        cl_arg_cnt += is_gdb;
         char **cl_args = (char **)malloc((cl_arg_cnt +  2) * sizeof(char *));
-        cl_args[0] = executable_filename;
+        if (is_gdb) {
+            cl_args[0] = "/usr/bin/gdb";
+        }
+        cl_args[0 + is_gdb] = executable_filename;
         cl_args_ptr = cl_args_str;
-        for (int i = 1; i < 1 + cl_arg_cnt; i++) {
+        for (int i = 1 + is_gdb; i < 1 + cl_arg_cnt; i++) {
             cl_args[i] = cl_args_ptr;
             cl_args_ptr = strstr(cl_args_ptr, " ");
             *cl_args_ptr = '\0';
             cl_args_ptr++;
-        }
+        }        
         cl_args[1 + cl_arg_cnt] = (char *)NULL;
         execv(cl_args[0], cl_args);
         
