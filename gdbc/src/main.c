@@ -515,13 +515,22 @@ static struct http_response *program_callback(struct http_request request) {
     //char response_body[32];
     //snprintf(response_body, sizeof(response_body), "{\"pid\": %d}", pid);
     char *output = get_output_from_child(pid);
-    if (!output) {
-        response->status_code = HTTP_INTERNAL_SERVER_ERROR;
-        response->body = strdup("Failed to get output from child process");
+    if (output == 0) {
+        /* add empty string for client */
+        output = malloc(1);
+        output[0] = '\0';
+    } else if (output == (char *)-1) {
+        response->status_code = HTTP_NO_CONTENT;
+        response->body = NULL;
         response->headers = response_headers;
         response->http_version = HTTP_1_1;
-
         return response;
+    } else if (output == (char *)-2) {
+        response->status_code = HTTP_BAD_REQUEST;
+        response->body = strdup("Invalid parameter: pid");
+        response->headers = response_headers;
+        response->http_version = HTTP_1_1;
+        return response;        
     }
 
     json_object_t response_json_body = (json_object_t) {
