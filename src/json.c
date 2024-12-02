@@ -135,7 +135,7 @@ optional_t parse_json_element(const char *json_element_string) {
     struct json_element *json_element = (struct json_element*)malloc(sizeof(struct json_element));
     char *start_of_key;
     char *start_of_value;
-    json_element->is_string = 0;
+
     json_element->key = NULL;
     json_element->value = NULL;
 
@@ -166,7 +166,7 @@ optional_t parse_json_element(const char *json_element_string) {
 
     /* if not <string> */
     if (json_element_string[offset] != '\"') { 
-        json_element->is_string = 0;
+        json_element->value_type = JSON_NUMBER;
         char *end_of_value = start_of_value;
         int length;
         while (*end_of_value && *end_of_value != ',' && *end_of_value != '}')
@@ -186,7 +186,7 @@ optional_t parse_json_element(const char *json_element_string) {
         if (!value_str.stat) {
             goto parse_json_element_error;
         }
-        json_element->is_string = 1;
+        json_element->value_type = JSON_STRING;
         json_element->value = value_str.value;
         offset += value_str.stat;
     }
@@ -272,7 +272,7 @@ struct json_object *parse_json(const char *json_string) {
     return json_object_ret;
 }
 
-struct json_object* insert_json_element(struct json_object *json_object, const char *key, const char *value, int is_string) {
+struct json_object* insert_json_element(struct json_object *json_object, const char *key, const char *value, enum json_value_type value_type) {
     for (int i = 0; i < json_object->size; i++) {
         if (strcmp(json_object->items[i]->key, key) == 0) {
             return NULL;
@@ -304,7 +304,7 @@ struct json_object* insert_json_element(struct json_object *json_object, const c
         return NULL;
     }
     
-    element->is_string = is_string;
+    element->value_type = value_type;
     element->key = new_key;
     element->value = new_value;
 
@@ -351,7 +351,7 @@ char *json_object_stringify(const struct json_object *object) {
         /* need to insert a colon */
         ret_len += 1;
         
-        if (item->is_string) {
+        if (item->value_type == JSON_STRING) {
             for (int i = 0; item->value[i]; i++) {
                 /* Excluding UTF-16, characters that require escape processing 
                 * should be stored as 2 bytes, including the escape character. 
@@ -434,7 +434,7 @@ char *json_object_stringify(const struct json_object *object) {
         ret[reti++] = ':';
 
         /* value */
-        if (item->is_string) {
+        if (item->value_type == JSON_STRING) {
             ret[reti++] = '"';
             for (int i = 0; item->value[i]; i++) {
                 /* if needed, do escaping */

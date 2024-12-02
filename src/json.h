@@ -1,6 +1,27 @@
+#include <stdbool.h>
+#include "collections.h"
+
 struct json_element;
 struct json_object;
 
+typedef struct json_obejct json_object_t;
+typedef struct array json_array_t;
+typedef char* json_number_t;
+typedef char* json_string_t;
+typedef bool json_boolean_t;
+typedef char* json_null_t;
+
+/**
+ * @brief A JSON value can be an object, array, number, string, true, false, or null.
+ */
+enum json_value_type {
+    JSON_OBJECT,
+    JSON_ARRAY,
+    JSON_NUMBER,
+    JSON_STRING,
+    JSON_BOOLEAN,
+    JSON_NULL
+};
 
 /**
  * @brief element in json
@@ -8,9 +29,9 @@ struct json_object;
  */
 struct json_element {
     /**
-     * @brief the flag represents if it is <string>
+     * @brief type of value
      */
-    int is_string;
+    enum json_value_type value_type;
     /**
     * @brief key of a json_element to value
     */
@@ -85,14 +106,14 @@ struct json_object *parse_json(const char *json_string);
 /**
  * @brief Insert new json name/value pair into `json_object`.
  * 
- * @param headers a `struct json_object` where wants to store given name(key)/value pair.
+ * @param json_object a `struct json_object` where wants to store given name(key)/value pair.
  * @param key a key of new json element.
  * @param value a value of new json element.
- * @param is_string whether value is <string>
+ * @param value_type type of value to insert
  * @return The `struct json_object` given as json_object. In any situation, failing to store new element, return **NULL**.
  * @note Internally, this function uses `malloc` and `strcpy` to store `key` and `value` into new element. (Actually, uses `strdup`)
  */
-struct json_object* insert_json_element(struct json_object *json_object, const char *key, const char *value, int is_string);
+struct json_object* insert_json_element(struct json_object *json_object, const char *key, const char *value, enum json_value_type value_type);
 
 /**
  * @brief Find a name/value pair having same `key` in `object`.
