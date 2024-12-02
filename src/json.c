@@ -48,7 +48,7 @@ optional_t parse_string_token(const char *string_token) {
     }
     int i = 1;
     int len = 1;
-    while (string_token[len] != '"' && string_token[len] != '\0') {
+    while ((string_token[len - 1] == '\\' || string_token[len] != '"') && string_token[len] != '\0') {        
         len++;
     }
     /* parse failed */
@@ -216,6 +216,7 @@ struct json_object *parse_json(const char *json_string) {
     while (json_string[offset] != '\0') {
         const char *first_non_space = find_non_space(json_string + offset);
         if (first_non_space == NULL) { /* parse failed */
+            DLOGV("parse failed: No Contents\n");
             destruct_json_object(json_object_ret);
             break;
         }     
@@ -237,6 +238,7 @@ struct json_object *parse_json(const char *json_string) {
         struct json_element *parsed_element = parse_ret.value;
         
         if (parsed_element == NULL) { /* parse failed */
+            DLOGV("parse failed: from parse_element\n");
             destruct_json_object(json_object_ret);
             break;
         }
@@ -255,7 +257,9 @@ struct json_object *parse_json(const char *json_string) {
         offset = (int)(find_non_space(json_string + offset) - json_string);
         /* If no more json name-value pair, then '}' is expected. */
         if (json_string[offset] != ',') {
-            if (*find_non_space(json_string + offset) != '}') {
+            char last_ch_expected = *find_non_space(json_string + offset);
+            if (last_ch_expected != '}') {
+                DLOGV("parse failed: } is expected but %c found\n", last_ch_expected);
                 destruct_json_object(json_object_ret);
                 break;
             }
