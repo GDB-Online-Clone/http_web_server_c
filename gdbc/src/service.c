@@ -37,7 +37,7 @@ struct process_running PROCESSES[MAX_PROCESS];
 
 static inline int check_pidx(int pidx) {
     if (pidx < 0 || pidx >= MAX_PROCESS || !PROCESSES[pidx].is_running) {
-        DLOGV("PID is invalid\n");
+        DLOGV("PID is invalid: %d\n", pidx);
         return 0;
     }
     return 1;
@@ -61,10 +61,8 @@ static int set_FD_CLOEXEC(int fd) {
     return 1;
 }
 
-static pid_t check_pid_alive(pid_t pid) {
-    printf("CHECK PID %d ... ", pid);
+static pid_t check_pid_alive(pid_t pid) {    
     if (kill(pid, 0) == 0) {
-        printf("GOOD\n");
         return pid;
     }
     return 0;
@@ -111,10 +109,7 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     compile_option_cnt += is_gdb;
     char **compile_args = (char **)malloc((compile_option_cnt +  5) * sizeof(char *));
     compile_args[0] = get_compiler_path(compiler_type);
-#pragma GCC diagnostic push 
-#pragma GCC diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
     compile_args[1] = path_to_source_code;
-#pragma GCC diagnostic pop
     compile_args[2] = "-o";
     compile_args[3] = executable_filename;
     if (is_gdb) {
@@ -306,6 +301,7 @@ char *get_output_from_child(int pidx) {
         free(buf);
         if (n == 0) {
             if (!check_pid_alive(PROCESSES[pidx].pid)) {
+                DLOGV("dead\n");
                 cleanup_child_process(&PROCESSES[pidx]);
                 return (char *)-1;
             }

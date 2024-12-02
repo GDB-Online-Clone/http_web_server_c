@@ -479,7 +479,7 @@ static struct http_response *input_callback(struct http_request request) {
  * @test curl -X GET http://localhost:10010/program?pid=10
  */
 static struct http_response *program_callback(struct http_request request) {
-    DLOG("Enter '/program' route\n");
+    // DLOG("Enter '/program' route\n");
 
     // 1. 응답 구조체 초기화
     struct http_response *response = malloc(sizeof(struct http_response));
