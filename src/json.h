@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include "collections.h"
+#include "utility.h"
 
 struct json_element;
 struct json_object;
