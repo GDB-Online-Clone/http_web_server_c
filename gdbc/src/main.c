@@ -90,10 +90,16 @@ static struct http_response *validate_run_request(
         return NULL;
     }
 
-    // 1. Content-Type 헤더 검증
-    struct http_header *content_type = find_header(&request.headers, "Content-Type");    
+    // 1. Content-Type 헤더 검증 - 대소문자 구분 없이 검사
+    struct http_header *content_type = NULL;
+    for (int i = 0; i < request.headers.size; i++) {
+        if (strcasecmp(request.headers.items[i]->key, "Content-Type") == 0) {
+            content_type = request.headers.items[i];
+            break;
+        }
+    }
     
-    if (!content_type || strcmp(content_type->value, "application/json") != 0) {        
+    if (!content_type || strcasecmp(content_type->value, "application/json") != 0) {        
         response->body = strdup("Content-Type must be application/json");
         goto validate_error;
     }
