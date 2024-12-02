@@ -309,8 +309,9 @@ static struct http_response *handle_run_request(struct http_request request) {
     // 요청 검증
     struct http_response *validation_response = validate_run_request(request, &config);
     if (validation_response != NULL) {
+        DLOGV("validate failed\n");
         return validation_response;
-    }
+    }    
 
     // 프로그램 실행
     struct http_response *response = execute_program(&config);
@@ -442,7 +443,7 @@ static struct http_response *input_callback(struct http_request request) {
 
     if (!pid_query_parameter || !pid_query_parameter->value || strlen(pid_query_parameter->value) == 0) {
         response->status_code = HTTP_BAD_REQUEST;
-        response->body = strdup("Missing required query parameter: language");
+        response->body = strdup("Missing required query parameter: pid");
         response->headers = response_headers;
         response->http_version = HTTP_1_1;
 
