@@ -5,7 +5,7 @@
 struct json_element;
 struct json_object;
 
-typedef struct json_obejct json_object_t;
+typedef struct json_object json_object_t;
 typedef struct array json_array_t;
 typedef char* json_number_t;
 typedef char* json_string_t;
