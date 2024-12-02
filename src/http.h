@@ -295,16 +295,6 @@ int init_http_response(
 
 char* http_response_stringify(struct http_response http_response);
 
-/**
- * @brief Extract source code from JSON request body
- *
- * @param body Request body containing JSON data
- * @return char* Extracted source code string, or NULL if not found or error
- * @note Caller is responsible for freeing the returned string
- * @warning Returns NULL if body is NULL, not valid JSON, or "source_code" key not found
- */
-char* extract_source_code_from_body(const char* body);
-
 /* http 웹서버 라이브러리 구조체 */
 
 /**
