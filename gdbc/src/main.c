@@ -492,6 +492,12 @@ static struct http_response *program_callback(struct http_request request) {
         return NULL;
     }
 
+    // 응답 헤더 설정
+    insert_header(&response_headers, "Content-Type", "application/json");
+    insert_header(&response_headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&response_headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&response_headers, "Access-Control-Allow-Headers", "*");
+
     // 2. 필수 쿼리 파라미터 'pid' 검증
     struct http_query_parameter *pid_query_parameter = 
         find_query_parameter(&request.query_parameters, "pid");
@@ -520,25 +526,26 @@ static struct http_response *program_callback(struct http_request request) {
 
         return response;
     }
-    
-    int response_body_size = snprintf(NULL, 0, "{\"pid\": %d, \"output\": \"%s\"}", pid, output) + 1;
-    char *response_body = malloc(response_body_size);
-    if (!response_body) {
-        free(output);
-        return NULL;
-    }
-    snprintf(response_body, response_body_size, "{\"pid\": %d, \"output\": \"%s\"}", pid, output);
-    free(output);
 
-    // 응답 헤더 설정
-    insert_header(&response_headers, "Content-Type", "application/json");
-    insert_header(&response_headers, "Access-Control-Allow-Origin", "*");
-    insert_header(&response_headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    insert_header(&response_headers, "Access-Control-Allow-Headers", "*");
+    json_object_t response_json_body = (json_object_t) {
+        .capacity = 2,
+        .items = 0,
+        .items = malloc(2 * sizeof(sizeof(struct json_element *)))
+    };
+
+    char pid_str[16];
+    sprintf(pid_str, "%d", pid);
+    insert_json_element(&response_json_body, "pid", pid_str, JSON_NUMBER);
+    insert_json_element(&response_json_body, "output", output, JSON_STRING);
+    
+    char *response_body = json_object_stringify(&response_json_body);
+    int response_body_size = strlen(response_body) + 1;
+
+    free(output);
 
     response->http_version = HTTP_1_1;
     response->status_code = HTTP_OK;
-    response->body = strdup(response_body);
+    response->body = response_body;
     response->headers = response_headers;
 
     return response;
