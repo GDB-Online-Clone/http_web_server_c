@@ -76,6 +76,21 @@ struct routes* init_routes(struct routes *route_table) {
 }
 
 struct http_headers* insert_header(struct http_headers *headers, char *key, char *value) {
+    // Search for existing header with same key (case-insensitive)
+    for (int i = 0; i < headers->size; i++) {
+        if (strcasecmp(headers->items[i]->key, key) == 0) {
+            // Update existing header value
+            char *new_value = strdup(value);
+            if (!new_value) {
+                return NULL;
+            }
+            free(headers->items[i]->value);
+            headers->items[i]->value = new_value;
+            return headers;
+        }
+    }
+    
+    // If key doesn't exist, create new header
     if (headers->capacity == headers->size) {
         int new_capacity = headers->capacity * 2;
 
