@@ -641,7 +641,7 @@ int main() {
     struct web_server app = (struct web_server){
         .route_table = &route_table,
         .port_num = 10010,
-        .backlog = 10};
+        .backlog = 128};
 
     run_web_server(app);
     return 0;
