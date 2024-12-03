@@ -73,3 +73,5 @@ temp
 temp/*
 bins
 bins/*
+venv
+venv/*
