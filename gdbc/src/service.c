@@ -100,10 +100,11 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     if (compile_options && compile_options[0] != '\0') {
         c_options = strdup(compile_options);
         compile_options_ptr = c_options;
+        compile_option_cnt++;
         while ((compile_options_ptr = strstr(compile_options_ptr, " "))) {
             compile_option_cnt++;
             compile_options_ptr++;
-        }
+        }        
     }
 
     /* actual compiler arguments to be passed with `posix_spawn` */
@@ -120,6 +121,8 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     for (int i = 4 + is_gdb; i < 4 + compile_option_cnt; i++) {
         compile_args[i] = compile_options_ptr;
         compile_options_ptr = strstr(compile_options_ptr, " ");
+        if (!compile_options_ptr)
+            break;
         *compile_options_ptr = '\0';
         compile_options_ptr++;
     }
@@ -192,6 +195,7 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
         if (command_line_args && command_line_args[0] != '\0') {
             cl_args_str = strdup(command_line_args);
             cl_args_ptr = cl_args_str;
+            cl_arg_cnt++;
             while ((cl_args_ptr = strstr(cl_args_ptr, " "))) {
                 cl_arg_cnt++;
                 cl_args_ptr++;
@@ -209,6 +213,8 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
         for (int i = 1 + is_gdb; i < 1 + cl_arg_cnt; i++) {
             cl_args[i] = cl_args_ptr;
             cl_args_ptr = strstr(cl_args_ptr, " ");
+            if (!cl_args_ptr)
+                break;
             *cl_args_ptr = '\0';
             cl_args_ptr++;
         }        
