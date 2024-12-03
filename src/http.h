@@ -18,6 +18,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <stdatomic.h>
 
 enum http_status_code;
 enum http_method;
@@ -152,19 +153,21 @@ struct http_headers parse_http_headers(char* headers_string);
 char *http_headers_stringify(struct http_headers *headers);
 
 /**
- * @brief Insert new header into `headers`.
- * 
- * @param headers a `struct http_headers` where wants to store given header having 'key' and 'value'.
- * @param key a key of new header.
- * @param value a value of new header.
- * @return The `struct http_headers` given as headers. In any situation, failing to store new header, return **NULL**.
- * @note Internally, this function uses `malloc` and `strcpy` to store `key` and `value` into new header. (Actually, uses `strdup`)
+ * @brief Insert new header into headers or update if key already exists.
+ * HTTP headers are case-insensitive, so this function will update an existing header
+ * if the key matches case-insensitively.
+ *
+ * @param headers a `struct http_headers` where wants to store given header having 'key' and 'value'
+ * @param key a key of new header
+ * @param value a value of new header
+ * @return The `struct http_headers` given as headers. In any situation, failing to store new header, return NULL
+ * @note Internally, this function uses `strdup` to store `key` and `value` into new header
  */
 struct http_headers* insert_header(struct http_headers *headers, char* key, char* value);
 
 /**
  * @brief Find a header having same `key` in `headers`.
- * 
+ *
  * @param headers List of headers to search for.
  * @param key key of header
  * @return Header matched by `key`. Returns NULL if not found.
@@ -189,7 +192,7 @@ struct http_header* find_header(const struct http_headers *headers, const char *
  *         - Memory allocation fails
  *         - No '=' separator is found
  *
- * @note 
+ * @note
  * - Uses strtok_r() for thread-safe string tokenization
  * - Creates new memory allocations for both key and value
  *
@@ -228,11 +231,11 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
 
 /**
  * @brief Parse the query parameters string and return a struct http_query_parameters.
- * 
+ *
  * This function parses the query parameters string and returns a struct http_query_parameters
  * containing an array of struct http_query_parameter. The query parameters string should be
  * in the format "key1=value1&key2=value2&key3=value3".
- * 
+ *
  * @param parameters_string The query parameters string to be parsed.
  * @return struct http_query_parameters The parsed query parameters.
  */
@@ -347,6 +350,7 @@ enum http_method {
     HTTP_POST,
     HTTP_PUT,
     HTTP_DELETE,
+    HTTP_OPTIONS,
     HTTP_METHOD_UNKNOWN, // Unknown method handling
 };
 

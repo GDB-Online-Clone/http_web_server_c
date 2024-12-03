@@ -22,6 +22,9 @@ all: $(shared) arrange
 
 binary: all $(bin)
 
+run: binary
+	./gdbc/$(bin)
+
 test: all $(shared) $(unittest)
 	./test/unittest
 
@@ -36,7 +39,7 @@ $(OUT_DIR):
 arrange: $(shared)
 	mv *.o *.d $(OUT_DIR)
 
-%.o: $(SRC_DIR)/%.c $(OUT_DIR) 
+%.o: $(SRC_DIR)/%.c $(OUT_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
 
 $(shared): $(OBJS)
@@ -44,21 +47,22 @@ $(shared): $(OBJS)
 	mkdir -p include
 	mkdir -p $(INCLUDE_DIR)
 	$(CC) -shared $(CFLAGS) -o libs/$@ $(OBJS) $(LDFLAGS)
-	cp $(SRC_DIR)/*.h include/webserver	
+	cp $(SRC_DIR)/*.h include/webserver
 	cp $(SRC_DIR)/*.h $(OUT_DIR)/include/webserver
 	cp libs/$@ $(OUT_DIR)/libs
 
 
 $(bin): arrange
-	$(CC) $(CFLAGS) $(OUT_OBJS) -o $@ $(LDFLAGS)
-	
+	make -C gdbc
+
 $(unittest): arrange
 	$(CC) $(CFLAGS) $(TEST_SRCS) -o $(TEST_DIR)/$@ $(LDFLAGS) $(UNITTEST_LDFLAGS)
 
 .PHONY: clean all test
 clean:
-	rm -f $(bin) *.o *.d
-	rm out -r
-	rm test/$(unittest)
+	-rm -f $(bin) *.o *.d
+	-rm out -r
+	-make clean -C gdbc
+	-rm test/$(unittest)
 
 -include $(OBJS:.o=.d)

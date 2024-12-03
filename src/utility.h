@@ -21,13 +21,17 @@
 #define DLOG(fmt, args...) /* Don't do anything in release builds */
 #endif
 
+struct optional;
+
+typedef struct optional optional_t;
+
 /**
  * @brief Check input is white-space.
- * 
+ *
  * @param ch chracter to check
  * @retval 1 if input is white-space
  * @retval 0 if input is white-space
- * 
+ *
  * @note The '\n', '\t', '\r', ' ', '\f', and '\v' are white-spaces.
  */
 inline static int is_non_space(char ch) {
@@ -36,7 +40,7 @@ inline static int is_non_space(char ch) {
 
 /**
  * @brief Find first non-whitespace character and return its pointer.
- * 
+ *
  * @param str String to find non-whitespace
  * @return Pointer of first non-white-space character. If it reaches at `\0` before finding any non-white-space, return **NULL**.
  * @retval `NULL` If cannot find any non-white-space character before `\0`
@@ -45,7 +49,7 @@ char *find_non_space (char *str);
 
 /**
  * @brief Compare two URL paths.
- * 
+ *
  * @param lhs URL path as char* string
  * @param rhs Another URL path as char* string
  * @return similar to `strcmp()`. 0 if they equal. 1 or -1 as lexicographical order.
@@ -55,15 +59,31 @@ inline static int url_path_cmp(const char *lhs, const char *rhs) {
         if (lhs[i] != rhs[i]) {
             /* even though the last '/' is omitted, it is the same path */
             if ((lhs[i] == '\0' && rhs[i] == '/' && rhs[i + 1] == '\0')
-                || (rhs[i] == '\0' && lhs[i] == '/' && lhs[i + 1] == '\0')) {               
+                || (rhs[i] == '\0' && lhs[i] == '/' && lhs[i + 1] == '\0')) {
                     return 0;
-            }            
+            }
             if (lhs[i] - rhs[i] < 0)
                 return -1;
-            else 
+            else
                 return 1;
         } else if (lhs[i] == '\0') {
             return 0;
         }
     }
 }
+
+/**
+ * @brief Pair of integer and ptr.
+ * The basic usage can be used when you want to return the function's state code
+ * and non-local variable return values at the same time.
+ */
+struct optional {
+    /**
+     * @brief Integer value (may represent status)
+     */
+    int stat;
+    /**
+     * @brief Address value (may represent object allocated with malloc)
+     */
+    void *value;
+};
