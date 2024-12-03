@@ -105,6 +105,14 @@ static struct http_response *validate_run_request(
         goto validate_error;
     }
 
+    json_object_t *request_body = parse_json(request.body);
+
+    if (request_body == NULL) {
+        DLOGV("informed `parse failed`\n");
+        response->body = strdup("JSON data is malformed");        
+        goto validate_error;
+    }
+
     // 2. language 파라미터 검증
     struct http_query_parameter *language =
         find_query_parameter(&request.query_parameters, "language");
@@ -128,20 +136,13 @@ static struct http_response *validate_run_request(
     }
 
     // 5. 선택적 파라미터 처리
-    struct http_query_parameter *compile_opt =
-        find_query_parameter(&request.query_parameters, "compile_option");
-    struct http_query_parameter *args =
-        find_query_parameter(&request.query_parameters, "argument");
+    struct json_element *compile_opt =
+        find_json_element(request_body, "compiler_options");
+    struct json_element *args =
+        find_json_element(request_body, "command_line_arguments");
 
 
-    json_object_t *request_body = parse_json(request.body);
-
-    if (request_body == NULL) {
-        DLOGV("informed `parse failed`\n");
-        destruct_http_headers(&headers);        
-        response->body = strdup("JSON data is malformed");        
-        goto validate_error;
-    }
+    
 
     // 구성 저장
     config->language = language->value;
@@ -158,6 +159,7 @@ static struct http_response *validate_run_request(
     return NULL;
 
     validate_error:
+    destruct_http_headers(&headers);        
     response->status_code = HTTP_BAD_REQUEST;    
     response->headers = headers;
     response->http_version = HTTP_1_1;
