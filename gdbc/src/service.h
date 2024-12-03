@@ -6,8 +6,8 @@
  */
 struct process_running {
     pid_t pid;
-    int from_child_pipe[2];
-    int to_child_pipe[2];
+    FILE *to_child;
+    FILE *from_child;
     int is_running;
 };
 

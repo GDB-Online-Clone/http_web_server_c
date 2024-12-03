@@ -2,23 +2,26 @@
 #define _POSIX_C_SOURCE 200809L
 #endif
 
+#define _GNU_SOURCE
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <spawn.h>
 #include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
+#include <sys/ioctl.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <sys/ioctl.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
 
-#include <webserver/utility.h>
 #include "service.h"
+#include <webserver/utility.h>
 
 #define MAX_PROCESS 16
 #define BUF_SIZE 1024
@@ -69,18 +72,13 @@ static pid_t check_pid_alive(pid_t pid) {
 }
 
 static int cleanup_child_process(struct process_running *p_info) {
-    if (p_info->is_running == 0) {
-        return 0;
-    }
-    pid_t ret = waitpid(p_info->pid, NULL, WNOHANG);
-    if (ret == 0) {
-        return 0;
-    }
-    close(p_info->to_child_pipe[1]);
-    close(p_info->from_child_pipe[0]);
+    assert(p_info->is_running != 0);
 
-    p_info->to_child_pipe[1] = -1;
-    p_info->from_child_pipe[0] = -1;
+    int status;
+    pid_t ret = waitpid(p_info->pid, &status, 0);
+
+    fclose(p_info->to_child);
+    fclose(p_info->from_child);
 
     p_info->is_running = 0;
     return 1;
@@ -94,6 +92,9 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     int compile_option_cnt = 0;
     char *c_options = NULL;
     char *compile_options_ptr = NULL;
+
+    int from_child_pipe[2];
+    int to_child_pipe[2];
 
     /* parse compile_options */
     if (compile_options && compile_options[0] != '\0') {
@@ -138,11 +139,11 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     };
 
     /* 파이프 생성 */
-    if (pipe(PROCESSES[pidx].from_child_pipe) == -1) {
+    if (pipe(from_child_pipe) == -1) {
         perror("pipe");
         goto build_and_run_error;
     }
-    if (pipe(PROCESSES[pidx].to_child_pipe) == -1) {
+    if (pipe(to_child_pipe) == -1) {
         perror("pipe");
         goto build_and_run_error;
     }
@@ -154,14 +155,14 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     } else if (PROCESSES[pidx].pid == 0) {
         /* forked */
         /* 표준 입출력의 리다이렉션 */
-        close(PROCESSES[pidx].from_child_pipe[0]);
-        dup2(PROCESSES[pidx].from_child_pipe[1], STDOUT_FILENO);
-        dup2(PROCESSES[pidx].from_child_pipe[1], STDERR_FILENO);
-        close(PROCESSES[pidx].from_child_pipe[1]);
+        close(from_child_pipe[0]);
+        dup2(from_child_pipe[1], STDOUT_FILENO);
+        dup2(from_child_pipe[1], STDERR_FILENO);
+        close(from_child_pipe[1]);
 
-        close(PROCESSES[pidx].to_child_pipe[1]);
-        dup2(PROCESSES[pidx].to_child_pipe[0], STDIN_FILENO);
-        close(PROCESSES[pidx].to_child_pipe[0]);
+        close(to_child_pipe[1]);
+        dup2(to_child_pipe[0], STDIN_FILENO);
+        close(to_child_pipe[0]);
 
         /* 목표 프로세스 실행 */
         pid_t compiler_pid;
@@ -218,17 +219,18 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
         perror("exec");
         exit(EXIT_FAILURE);
     }
-    close(PROCESSES[pidx].to_child_pipe[0]);
-    close(PROCESSES[pidx].from_child_pipe[1]);
-    PROCESSES[pidx].to_child_pipe[0] = -1;
-    PROCESSES[pidx].from_child_pipe[1] = -1;
+    close(to_child_pipe[0]);
+    close(from_child_pipe[1]);
 
     /* 다른 자식 프로세스에서는 해당 파일 기술자 에 접근하지 못하게 하기 위함 */
-    set_FD_CLOEXEC(PROCESSES[pidx].to_child_pipe[1]);
-    set_FD_CLOEXEC(PROCESSES[pidx].from_child_pipe[0]);
+    set_FD_CLOEXEC(to_child_pipe[1]);
+    set_FD_CLOEXEC(from_child_pipe[0]);
 
-    int inpipe_flags = fcntl(PROCESSES[pidx].from_child_pipe[0], F_GETFL);
-    if (fcntl(PROCESSES[pidx].from_child_pipe[0], F_SETFL, inpipe_flags | O_NONBLOCK) ==
+    PROCESSES[pidx].to_child = fdopen(to_child_pipe[1], "w");
+    PROCESSES[pidx].from_child = fdopen(from_child_pipe[0], "r");
+
+    int inpipe_flags = fcntl(from_child_pipe[0], F_GETFL);
+    if (fcntl(from_child_pipe[0], F_SETFL, inpipe_flags | O_NONBLOCK) ==
         -1) {
         perror("fcntl");
     }
@@ -266,10 +268,13 @@ int stop_process(int pidx) {
         perror("kill");        
         return 0;
     }
+    DLOGV("CLEANUP: %d\n", pidx);
+    cleanup_child_process(&PROCESSES[pidx]);
     return 1;
 }
 
 int pass_input_to_child(int pidx, char *input) {
+    DLOGV("pass input like:\n%s\n", input);
     if (check_pidx(pidx) == 0)
         return -2;
     if (!check_pid_alive(PROCESSES[pidx].pid)) {
@@ -277,52 +282,42 @@ int pass_input_to_child(int pidx, char *input) {
         return -1;
     }
 
-    ssize_t n;
-    n = write(PROCESSES[pidx].to_child_pipe[1], input, strlen(input));
+    int n = fprintf(PROCESSES[pidx].to_child, "%s\n", input);
+
     if (n < 0) {
         printf("PROCESS CANNOT GET INPUT\n");
         return -1;
     }
+    fflush(PROCESSES[pidx].to_child);
     return n;
 }
 
 char *get_output_from_child(int pidx) {
     if (check_pidx(pidx) == 0)
-        return -2;
-    int available_bytes;
-    if (ioctl(PROCESSES[pidx].from_child_pipe[0], FIONREAD, &available_bytes) == -1) {
-        perror("ioctl");        
-        return (char *)-1;        
-    }
-        
-    char *buf = malloc(available_bytes + 1);    
-    ssize_t n;
-    if ((n = read(PROCESSES[pidx].from_child_pipe[0], buf, available_bytes) <= 0)) {
+        return (char *)-2;
+    char *buf = malloc(1024 * 14);
+    buf[0] = '\0';
+    int pfd = fileno(PROCESSES[pidx].from_child);
+
+    ssize_t bytes_read;
+    bytes_read = read(pfd, buf, 1024 * 14);
+
+    if (bytes_read == 0) {
         free(buf);
-        if (n == 0) {
-            if (!check_pid_alive(PROCESSES[pidx].pid)) {
-                DLOGV("dead\n");
-                cleanup_child_process(&PROCESSES[pidx]);
-                return (char *)-1;
-            }
-            return NULL;
-        }
-        
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {            
-            return NULL;
-        }
-        printf("CANNOT READ ANYMORE (in any reason)\n");
-        printf("Check is PROCESS DONE ... ");
-        if (cleanup_child_process(&PROCESSES[pidx])) {
-            printf("EXITED\n");
-            return (char *)-1;
-        } else {
-            printf("KILL this\n");
-            stop_process(pidx);
-            cleanup_child_process(&PROCESSES[pidx]);
-            return (char *)-1;
-        }
+        cleanup_child_process(&PROCESSES[pidx]);
+        return (char *)-1;
     }
-    buf[available_bytes] = '\0';
+
+    if (bytes_read == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+        return NULL;
+    }
+
+    if (bytes_read == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+        perror("read");
+    } else {
+        buf[bytes_read] = '\0';
+    }
+    
+    DLOGV("%s\n", buf);
     return buf;
 }
