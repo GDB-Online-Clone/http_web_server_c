@@ -18,6 +18,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <stdatomic.h>
 
 enum http_status_code;
 enum http_method;
@@ -152,13 +153,15 @@ struct http_headers parse_http_headers(char* headers_string);
 char *http_headers_stringify(struct http_headers *headers);
 
 /**
- * @brief Insert new header into `headers`.
+ * @brief Insert new header into headers or update if key already exists.
+ * HTTP headers are case-insensitive, so this function will update an existing header
+ * if the key matches case-insensitively.
  * 
- * @param headers a `struct http_headers` where wants to store given header having 'key' and 'value'.
- * @param key a key of new header.
- * @param value a value of new header.
- * @return The `struct http_headers` given as headers. In any situation, failing to store new header, return **NULL**.
- * @note Internally, this function uses `malloc` and `strcpy` to store `key` and `value` into new header. (Actually, uses `strdup`)
+ * @param headers a `struct http_headers` where wants to store given header having 'key' and 'value'
+ * @param key a key of new header
+ * @param value a value of new header
+ * @return The `struct http_headers` given as headers. In any situation, failing to store new header, return NULL
+ * @note Internally, this function uses `strdup` to store `key` and `value` into new header
  */
 struct http_headers* insert_header(struct http_headers *headers, char* key, char* value);
 
@@ -347,6 +350,7 @@ enum http_method {
     HTTP_POST,
     HTTP_PUT,
     HTTP_DELETE,
+    HTTP_OPTIONS,
     HTTP_METHOD_UNKNOWN, // Unknown method handling
 };
 

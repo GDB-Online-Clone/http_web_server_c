@@ -1,3 +1,7 @@
+#define _GNU_SOURCE 
+#include <time.h>
+#include <stdio.h>
+
 #include "http.h"
 #include "utility.h"
 
@@ -76,6 +80,21 @@ struct routes* init_routes(struct routes *route_table) {
 }
 
 struct http_headers* insert_header(struct http_headers *headers, char *key, char *value) {
+    // Search for existing header with same key (case-insensitive)
+    for (int i = 0; i < headers->size; i++) {
+        if (strcasecmp(headers->items[i]->key, key) == 0) {
+            // Update existing header value
+            char *new_value = strdup(value);
+            if (!new_value) {
+                return NULL;
+            }
+            free(headers->items[i]->value);
+            headers->items[i]->value = new_value;
+            return headers;
+        }
+    }
+    
+    // If key doesn't exist, create new header
     if (headers->capacity == headers->size) {
         int new_capacity = headers->capacity * 2;
 
@@ -172,7 +191,7 @@ struct http_header *parse_http_header(char *header_string) {
         
         header->key = (char*)malloc(length + 1);
         strncpy(header->key, start_of_key, length);
-
+        header->key[length] = '\0';
     } else {
         /* Case of quoted string. now we cannnot perform like above, because ':' can be inside of key name. */
         /* At now, our target is to find ` ": `, double quotes followed by ':'. */
@@ -202,6 +221,7 @@ struct http_header *parse_http_header(char *header_string) {
         
         header->key = (char*)malloc(length + 1);
         strncpy(header->key, start_of_key, length);
+        header->key[length] = '\0';
     }
     
 
@@ -231,7 +251,7 @@ struct http_header *parse_http_header(char *header_string) {
         
         header->value = (char*)malloc(length + 1);
         strncpy(header->value, start_of_value, length);
-
+        header->value[length] = '\0';
     } else {
         /* Case of quoted string. now we cannnot perform like above, because ':' can be inside of value string. */
         /* At now, our target is to find ` "<CRLF> `, double quotes followed by "\r\n". */
@@ -261,6 +281,7 @@ struct http_header *parse_http_header(char *header_string) {
         
         header->value = (char*)malloc(length + 1);
         strncpy(header->value, start_of_value, length);
+        header->value[length] = '\0';
     }
  
     return header;
@@ -345,24 +366,24 @@ char *http_headers_stringify(struct http_headers *headers) {
         total_length += strlen(header->key) + strlen(header->value) + 4; 
     }
 
-    char *result = (char *)malloc(total_length + 1);
+    char *result = (char *)calloc(total_length + 1, sizeof(char));
     if (result == NULL) {
-        return NULL; // Allocate memory for the headers string
+        return NULL;
     }
 
-    result[0] = '\0'; // Initialize empty string
     for (int i = 0; i < headers->size; i++) {
         struct http_header *header = headers->items[i];
 
-        // No header to process
+        // Ensure the header and its fields are valid
         if (header == NULL || header->key == NULL || header->value == NULL) {
             continue;
         }
 
-        strcat(result, header->key);
-        strcat(result, ": ");
-        strcat(result, header->value);
-        strcat(result, "\r\n");
+        // Safely concatenate strings
+        strncat(result, header->key, strlen(header->key));
+        strncat(result, ": ", 2);
+        strncat(result, header->value, strlen(header->value));
+        strncat(result, "\r\n", 2);
     }
 
     return result;
@@ -596,6 +617,9 @@ char* http_response_stringify(struct http_response http_response) {
 enum http_method parse_http_method(const char *method) {
     if (strcmp(method, "GET") == 0) return HTTP_GET;
     if (strcmp(method, "POST") == 0) return HTTP_POST;
+    if (strcmp(method, "PUT") == 0) return HTTP_PUT;
+    if (strcmp(method, "DELETE") == 0) return HTTP_DELETE;
+    if (strcmp(method, "OPTIONS") == 0) return HTTP_OPTIONS;
     return HTTP_METHOD_UNKNOWN;
 }
 
@@ -604,6 +628,7 @@ char* http_method_stringify(const enum http_method method) {
     if (method == HTTP_POST) return "POST";
     if (method == HTTP_PUT) return "PUT";
     if (method == HTTP_DELETE) return "DELETE";
+    if (method == HTTP_OPTIONS) return "OPTIONS";
     return "UNKNOWN";
 }
 
@@ -770,23 +795,10 @@ struct http_request *parse_http_request(const char *request) {
         ? parse_http_headers(header)
         : http_headers;
 
-    DLOG("In request parser\n");
-    for (int i = 0; i < http_headers.size; i++) {
-        DLOG("%s: %s\n", http_headers.items[i]->key, http_headers.items[i]->value);        
-    }
 
     http_query_parameters = query != NULL
         ? parse_query_parameters(query)
         : http_query_parameters;
-
-    DLOG("DEBUG INFO:\n");
-    DLOG("Parsed Method: %d\n", parsed_method);
-    DLOG("Parsed Version: %d\n", parsed_version);
-    DLOG("Path String: %s\n", path ? path : "(null)");
-    DLOG("Query String: %s\n", query ? query : "(null)");
-    DLOG("Header String: %s\n", header ? header : "(null)");
-    DLOG("Body String: %s\n", body ? body : "(null)");
-     DLOG("\n");
 
     // Http Request 초기화
     init_http_request(
@@ -821,28 +833,52 @@ int run_web_server(struct web_server server) {
 
     struct http_response    response_500;
     struct http_response    response_404;
+    struct http_response    response_204;
 
     response_500 = (struct http_response) {
         .body = NULL,
         .headers = (struct http_headers) {
-            .capacity = 0,
-            .items = NULL,
+            .capacity = 8,
+            .items = malloc(8 * sizeof(struct http_header*)),
             .size = 0
         },
         .http_version = HTTP_1_1,
         .status_code = HTTP_INTERNAL_SERVER_ERROR
     };
 
+    insert_header(&response_500.headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&response_500.headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&response_500.headers, "Access-Control-Allow-Headers", "*");
+
     response_404 = (struct http_response) {
         .body = NULL,
         .headers = (struct http_headers) {
-            .capacity = 0,
-            .items = NULL,
+            .capacity = 8,
+            .items = malloc(8 * sizeof(struct http_header*)),
             .size = 0
         },
         .http_version = HTTP_1_1,
         .status_code = HTTP_NOT_FOUND
     };
+
+    insert_header(&response_404.headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&response_404.headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&response_404.headers, "Access-Control-Allow-Headers", "*");
+
+    response_204 = (struct http_response) {
+        .body = NULL,
+        .headers = (struct http_headers) {
+            .capacity = 8,
+            .items = malloc(8 * sizeof(struct http_header*)),
+            .size = 0
+        },
+        .http_version = HTTP_1_1,
+        .status_code = HTTP_NO_CONTENT
+    };
+
+    insert_header(&response_204.headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&response_204.headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&response_204.headers, "Access-Control-Allow-Headers", "*");
 
     // 버퍼 할당
     buffer = (char *)malloc(buffer_size_kb * KB);
@@ -892,7 +928,7 @@ int run_web_server(struct web_server server) {
     while (1) {
         struct route            *found_route;
         struct http_response    *response = NULL;
-        struct http_request     *request;
+        struct http_request     *request = NULL;
         char                    *response_str;
         int                     client_socket;
         ssize_t                 bytes_read;
@@ -914,7 +950,7 @@ int run_web_server(struct web_server server) {
         total_read += bytes_read;
         // 강의자료에 있는 while 문 read 참고해서 구현 : END
 
-
+    
         if (total_read < 0) {
             perror("read");
             close(client_socket);
@@ -942,6 +978,11 @@ int run_web_server(struct web_server server) {
             goto label_send_response;
         }
 
+        if (request->method == HTTP_OPTIONS) {
+            response = &response_204;
+            goto label_send_response;
+        }
+
         // 라우트 찾기
         found_route = find_route(server.route_table, request->path, request->method);
 
@@ -961,7 +1002,7 @@ int run_web_server(struct web_server server) {
         response_str = http_response_stringify(*response);
 
         /* response 가 null 일 경우는 없다고 가정 */
-        if (response != &response_404 && response != &response_500) {
+        if (response != &response_404 && response != &response_500 && response != &response_204) {
             if (response->body)
                 free(response->body);
 
@@ -971,10 +1012,24 @@ int run_web_server(struct web_server server) {
             free(response);
         }
 
-        // 클라이언트에 응답 전송
-        write(client_socket, response_str, strlen(response_str));
-        // @TODO 에러 시 서버 로그 추가
-        // @TODO 로깅 함수 utilty에 추가
+        // 응답 전송
+        ssize_t total_written = 0;
+        size_t response_len = strlen(response_str);
+
+        while (total_written < response_len) {
+            ssize_t written = write(client_socket,
+                                    response_str + total_written,
+                                    response_len - total_written);
+            if (written <= 0) {
+                if (errno == EINTR)
+                    continue;
+                break;
+            }
+            total_written += written;
+        }
+
+        // 응답이 완전히 전송되도록 보장
+        shutdown(client_socket, SHUT_WR);
 
         // 메모리 정리
         free(response_str);
@@ -983,10 +1038,11 @@ int run_web_server(struct web_server server) {
             destruct_http_request(request);
             free(request);
         }
-        close(client_socket);  // 클라이언트 소켓 닫기        
+
+        close(client_socket);
     }
 
-    free(buffer);  // 버퍼 메모리 해제
-    close(server_fd);  // 서버 소켓 닫기
+    free(buffer);     // 버퍼 메모리 해제
+    close(server_fd); // 서버 소켓 닫기
     return 0;
 }

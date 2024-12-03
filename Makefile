@@ -22,6 +22,9 @@ all: $(shared) arrange
 
 binary: all $(bin)
 
+run: binary
+	./gdbc/$(bin)
+
 test: all $(shared) $(unittest)
 	./test/unittest
 
@@ -50,15 +53,16 @@ $(shared): $(OBJS)
 
 
 $(bin): arrange
-	$(CC) $(CFLAGS) $(OUT_OBJS) -o $@ $(LDFLAGS)
+	make -C gdbc
 	
 $(unittest): arrange
 	$(CC) $(CFLAGS) $(TEST_SRCS) -o $(TEST_DIR)/$@ $(LDFLAGS) $(UNITTEST_LDFLAGS)
 
 .PHONY: clean all test
 clean:
-	rm -f $(bin) *.o *.d
-	rm out -r
-	rm test/$(unittest)
+	-rm -f $(bin) *.o *.d
+	-rm out -r
+	-make clean -C gdbc
+	-rm test/$(unittest)
 
 -include $(OBJS:.o=.d)
