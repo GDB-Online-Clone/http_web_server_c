@@ -1,3 +1,7 @@
+#define _GNU_SOURCE 
+#include <time.h>
+#include <stdio.h>
+
 #include "http.h"
 #include "utility.h"
 
@@ -791,23 +795,10 @@ struct http_request *parse_http_request(const char *request) {
         ? parse_http_headers(header)
         : http_headers;
 
-    DLOG("In request parser\n");
-    for (int i = 0; i < http_headers.size; i++) {
-        DLOG("%s: %s\n", http_headers.items[i]->key, http_headers.items[i]->value);        
-    }
 
     http_query_parameters = query != NULL
         ? parse_query_parameters(query)
         : http_query_parameters;
-
-    DLOG("DEBUG INFO:\n");
-    DLOG("Parsed Method: %d\n", parsed_method);
-    DLOG("Parsed Version: %d\n", parsed_version);
-    DLOG("Path String: %s\n", path ? path : "(null)");
-    DLOG("Query String: %s\n", query ? query : "(null)");
-    DLOG("Header String: %s\n", header ? header : "(null)");
-    DLOG("Body String: %s\n", body ? body : "(null)");
-    DLOG("\n");
 
     // Http Request 초기화
     init_http_request(
