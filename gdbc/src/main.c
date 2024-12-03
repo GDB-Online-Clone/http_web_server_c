@@ -283,7 +283,7 @@ static struct http_response *execute_program(const struct run_handler_config *co
         return response;
     }
 
-    char *input_data = find_json_element(config->parsed_body, "stdin");
+    char *input_data = find_json_element(config->parsed_body, "stdin")->value;
     if (input_data) {
         int pass_input_res = pass_input_to_child(result, input_data);
         assert(pass_input_res != -2);
@@ -461,7 +461,7 @@ static struct http_response *input_callback(struct http_request request) {
     int pid = atoi(pid_query_parameter->value);
 
     json_object_t *body = parse_json(request.body);
-    pass_input_to_child(pid, find_json_element(body, stdin)->value);
+    pass_input_to_child(pid, find_json_element(body, "stdin")->value);
 
     // 5. 성공 응답 생성
     char response_body[32];
