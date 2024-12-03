@@ -39,7 +39,7 @@ $(OUT_DIR):
 arrange: $(shared)
 	mv *.o *.d $(OUT_DIR)
 
-%.o: $(SRC_DIR)/%.c $(OUT_DIR) 
+%.o: $(SRC_DIR)/%.c $(OUT_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
 
 $(shared): $(OBJS)
@@ -47,14 +47,14 @@ $(shared): $(OBJS)
 	mkdir -p include
 	mkdir -p $(INCLUDE_DIR)
 	$(CC) -shared $(CFLAGS) -o libs/$@ $(OBJS) $(LDFLAGS)
-	cp $(SRC_DIR)/*.h include/webserver	
+	cp $(SRC_DIR)/*.h include/webserver
 	cp $(SRC_DIR)/*.h $(OUT_DIR)/include/webserver
 	cp libs/$@ $(OUT_DIR)/libs
 
 
 $(bin): arrange
 	make -C gdbc
-	
+
 $(unittest): arrange
 	$(CC) $(CFLAGS) $(TEST_SRCS) -o $(TEST_DIR)/$@ $(LDFLAGS) $(UNITTEST_LDFLAGS)
 
