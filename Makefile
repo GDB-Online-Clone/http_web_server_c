@@ -1,4 +1,5 @@
-CFLAGS = -Wall -std=c2x -g -DDEBUG
+ADD =
+CFLAGS = -std=c2x -fPIC $(ADD)
 LDFLAGS = -Iinclude -Llibs -lpthread
 
 UNITTEST_LDFLAGS = -lwebserver -lcunit -Wl,-rpath,libs

@@ -1,3 +1,5 @@
+#pragma once
+
 #define _GNU_SOURCE 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,12 +35,6 @@ struct http_query_parameters;
 struct http_request;
 struct http_response;
 
-/**
- * @brief Run the web server
- * @param server Web server configuration structure
- * @return 0 on success, -1 on error
- */
-int run_web_server(struct web_server server);
 
 /**
  * @brief Find the route correspond to path and http method.
@@ -526,24 +522,3 @@ struct http_response {
     char* body;
 };
 
-/**
- * @brief Represents a web server with routing and status information.
- * 
- * This structure holds the routing table, HTTP status code, and response body
- * for a web server.
- * 
- */
-struct web_server {
-    /**
-     * @brief Pointer to the routing table containing the routes for the web server.
-     */
-    struct routes *route_table;
-    /**
-     * @brief The HTTP status code representing the current status of the web server.
-     */
-    int port_num;
-    /**
-     * @brief Size of buffer in which used by `listen`.
-     */
-    int backlog;
-};

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdbool.h>
 #include "collections.h"
 #include "utility.h"

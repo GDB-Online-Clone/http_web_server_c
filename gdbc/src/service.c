@@ -39,7 +39,8 @@ static atomic_int pcnt = 0;
 struct process_running PROCESSES[MAX_PROCESS];
 
 static inline int check_pidx(int pidx) {
-    if (pidx < 0 || pidx >= MAX_PROCESS || !PROCESSES[pidx].is_running) {
+    /* check for `is_running` doesn't need strong atomic */
+    if (pidx < 0 || pidx >= MAX_PROCESS || !atomic_load_explicit(&PROCESSES[pidx].is_running, memory_order_relaxed)) {
         DLOGV("PID is invalid: %d\n", pidx);
         return 0;
     }
@@ -80,21 +81,34 @@ static int cleanup_child_process(struct process_running *p_info) {
     fclose(p_info->to_child);
     fclose(p_info->from_child);
 
-    p_info->is_running = 0;
+    atomic_store(&p_info->is_running, false);
     return 1;
 }
 
 int build_and_run(const char *path_to_source_code, enum compiler_type compiler_type, const char *compile_options, const char *command_line_args, int is_gdb) {
-    int pidx = 0;        
+    int pidx = 0;
     char executable_filename[64];
-    sprintf(executable_filename, "bins/%d.out", pcnt++);    
-
     int compile_option_cnt = 0;
     char *c_options = NULL;
     char *compile_options_ptr = NULL;
+    char **compile_args;
 
     int from_child_pipe[2];
     int to_child_pipe[2];
+
+    for (pidx = 0; pidx < MAX_PROCESS; pidx++) {
+        bool expected = false;
+        if (atomic_compare_exchange_strong(&PROCESSES[pidx].is_running, &expected, true)) {
+            break;
+        }
+    }
+        
+    if (pidx == MAX_PROCESS) {
+        printf("NO MORE PRECESS\n");
+        goto build_and_run_error;
+    }
+
+    sprintf(executable_filename, "bins/%d.out", pcnt++);
 
     /* parse compile_options */
     if (compile_options && compile_options[0] != '\0') {
@@ -109,7 +123,7 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
 
     /* actual compiler arguments to be passed with `posix_spawn` */
     compile_option_cnt += is_gdb;
-    char **compile_args = (char **)malloc((compile_option_cnt +  5) * sizeof(char *));
+    compile_args = (char **)malloc((compile_option_cnt +  5) * sizeof(char *));
     compile_args[0] = get_compiler_path(compiler_type);
     compile_args[1] = path_to_source_code;
     compile_args[2] = "-o";
@@ -127,15 +141,6 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
         compile_options_ptr++;
     }
     compile_args[4 + compile_option_cnt] = (char *)NULL;
-
-
-    // @TODO PROCESSES need to be read with atomic operation
-    for (pidx = 0; pidx < MAX_PROCESS && PROCESSES[pidx].is_running; pidx++)
-        ;
-    if (pidx == MAX_PROCESS) {
-        printf("NO MORE PRECESS\n");
-        goto build_and_run_error;
-    }
 
     PROCESSES[pidx] = (struct process_running){
         .is_running = 1,
