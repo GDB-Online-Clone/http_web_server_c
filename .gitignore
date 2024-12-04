@@ -76,3 +76,5 @@ bins
 bins/*
 venv
 venv/*
+ide
+ide/*
