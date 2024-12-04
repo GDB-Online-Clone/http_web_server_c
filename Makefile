@@ -1,10 +1,10 @@
 ADD =
-CFLAGS = -std=c2x -fPIC $(ADD)
+CFLAGS = -std=c2x -fPIC -O2 $(ADD)
 LDFLAGS = -Iinclude -Llibs -lpthread
 
 UNITTEST_LDFLAGS = -lwebserver -lcunit -Wl,-rpath,libs
 
-bin = prog # exists only for debugging
+bin = gdb-online-clone
 unittest = unittest # exists only for unittest
 shared = libwebserver.so
 

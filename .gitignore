@@ -3,6 +3,7 @@
 *.d
 prog
 unittest
+gdb-online-clone
 
 out/*
 

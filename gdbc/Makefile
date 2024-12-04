@@ -1,8 +1,8 @@
 ADD =
-CFLAGS = -std=c2x -fPIC $(ADD)
+CFLAGS = -std=c2x -fPIC -O2 $(ADD)
 LDFLAGS = -I../include -L../libs -lpthread -lwebserver -Wl,-rpath,../libs -Wl,-rpath,libs
 
-bin = prog 
+bin = gdb-online-clone
 
 SRC_DIR = src
 OUT_DIR = out
