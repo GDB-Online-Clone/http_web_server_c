@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief Arr_ptr needs to be `struct array *`
  */
