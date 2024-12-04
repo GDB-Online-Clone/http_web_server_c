@@ -1,5 +1,5 @@
 ## 사전 준비 사항
-- text-test.js, interactive-test.js, debug-test.js, k6_visualize.py 를 /gdbc 디렉토리로 옮겨야 합니다.
+- `text-test.js, interactive-test.js, debug-test.js, k6_visualize.py` 를 `/gdbc` 디렉토리로 옮겨야 합니다.
 - Ubuntu 24.04에서는 Python 패키지를 시스템 전역에 직접 설치하는 것을 권장하지 않습니다. 
 - 대신 가상 환경을 만들어서 사용하는 것이 좋습니다. 다음 단계를 따라 설정해보겠습니다:
 
@@ -43,13 +43,25 @@ deactivate
 이렇게 하면 이전에 공유했던 테스트 스크립트를 안전하게 실행할 수 있습니다.
 
 ### text-mode 테스트 방법
-1. `k6 run --summary-export=text_mode.json text-test.js`
-2. `python3 k6_visualize.py text_mode.json`
+```bash
+#1
+k6 run --summary-export=text_mode.json text-test.js
+#2
+python3 k6_visualize.py text_mode.json
+```
 
 ### interactive-mode 테스트 방법
-1. `k6 run --summary-export=interactive_mode.json interactive-test.js`
-2. `python3 k6_visualize.py interactive_mode.json`
+```bash
+#1
+k6 run --summary-export=interactive_mode.json interactive-test.js
+#2
+python3 k6_visualize.py interactive_mode.json
+```
    
 ### debug-mode 테스트 방법
-1. `k6 run --summary-export=debug_mode.json debug-test.js`
-2. `python3 k6_visualize.py debug_mode.json`
+```bash
+#1
+k6 run --summary-export=debug_mode.json debug-test.js
+#2
+python3 k6_visualize.py debug_mode.json
+```
