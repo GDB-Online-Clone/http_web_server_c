@@ -23,7 +23,7 @@
 #include "service.h"
 #include <webserver/utility.h>
 
-#define MAX_PROCESS 1024
+#define MAX_PROCESS 4096
 
 extern char **environ;
 
