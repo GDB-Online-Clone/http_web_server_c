@@ -15,7 +15,21 @@
 - 코드 베이스 문서들은 <https://sony-string.net/GDB-Online-Clone/Http-Web-Server-C/> 여기서 확인하실 수 있습니다.
 
 ## How to build
-   
+
+### Prerequirement
+다음과 같은 버전에서 빌드가 됨을 확인하였습니다.   
+해당 프로젝트는 시스템 간 호환성이 좋지 못한 점이 있습니다.
+```bash
+gcc (Ubuntu 13.2.0-23ubuntu4) 13.2.
+
+Distributor ID: Ubuntu
+Description:    Ubuntu 24.04.1 LTS
+Release:        24.04
+Codename:       noble
+
+5.15.167.4-microsoft-standard-WSL2 # 네이티브 Ubuntu 24.04 의 기본 커널에서도 문제 없을 것으로 생각됩니다
+```
+
 ### 라이브러리 빌드
 빌드하기 위해 우선 프로젝트를 클론합니다.   
 ```bash
