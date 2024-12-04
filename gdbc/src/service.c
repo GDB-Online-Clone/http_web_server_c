@@ -23,8 +23,7 @@
 #include "service.h"
 #include <webserver/utility.h>
 
-#define MAX_PROCESS 16
-#define BUF_SIZE 1024
+#define MAX_PROCESS 1024
 
 extern char **environ;
 
@@ -91,10 +90,10 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     int compile_option_cnt = 0;
     char *c_options = NULL;
     char *compile_options_ptr = NULL;
-    char **compile_args;
+    char **compile_args = NULL;
 
-    int from_child_pipe[2];
-    int to_child_pipe[2];
+    int from_child_pipe[2] = {-1,-1};
+    int to_child_pipe[2] = {-1,-1};    
 
     for (pidx = 0; pidx < MAX_PROCESS; pidx++) {
         bool expected = false;
@@ -260,6 +259,18 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     }
     if (compile_args) {
         free(compile_args);
+    }
+    if (from_child_pipe[0] != -1) {
+        close(from_child_pipe[0]);
+    }
+    if (from_child_pipe[1] != -1) {
+        close(from_child_pipe[1]);
+    }
+    if (to_child_pipe[0] != -1) {
+        close(to_child_pipe[0]);
+    }
+    if (to_child_pipe[1] != -1) {
+        close(to_child_pipe[1]);
     }
     return -1;
 }
