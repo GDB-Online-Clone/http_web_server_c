@@ -1,20 +1,31 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
+name: Feature
+about: Add Feature or feature request
 title: ''
-labels: ''
+labels: 'feat'
 assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+<Push/PR> 체크리스트
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+- [x]  모든 테스트 코드를 통과한다.
+- [x]  기능이 추가되었다면 필요한 테스트가 작성되었다. (함수마다 테스트 코드 작성이 원칙)
+    - [ ]  아이디어의 부재 등으로 테스트가 작성되지 않았다면 이에 대한 코멘트를 남겼다. (어디에든)
+- [ ]  Commit 에 Issue 가 연결되었다.
+- [ ]  [코딩 스타일 스탠다드](https://www.notion.so/13998f9d1ef380a5abb2cd17fe67425a?pvs=21) 를 충족한다.
+- [ ]  함수/구조체에 doxygen 스타일 주석이 작성되었다.
+- [ ]  doxygen 이 올바르게 생성되는지 확인되었다.
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+### 기능 설명
+추가된 기능에 대한 설명을 남겨주세요.
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+### 구현 이유
+구현 이유, 기능의 추가로 기대되는 효과를 남겨주세요.
+
+### 구현 아이디어
+실제 구현 내용의 알고리즘, 로직, 혹은 구현할 방법에 대한 아이디어를 적어주세요.
+
+### 추가 정보
+추가 정보가 있다면 남겨주세요.
+

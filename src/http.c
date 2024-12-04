@@ -1,4 +1,4 @@
-#define _GNU_SOURCE 
+#define _GNU_SOURCE
 #include <time.h>
 #include <stdio.h>
 
@@ -9,7 +9,7 @@
 
 struct http_header* find_header(const struct http_headers *headers, const char *key) {
     for (int i = 0; i < headers->size; i++) {
-        if (strcmp(headers->items[i]->key, key) == 0) 
+        if (strcmp(headers->items[i]->key, key) == 0)
             return headers->items[i];
     }
     return NULL;
@@ -40,7 +40,7 @@ struct routes* insert_route(
         struct route** new_route_table = (struct route**)realloc(route_table->items, new_capacity * sizeof(struct route*));
 
         route_table->items = new_route_table;
-        route_table->capacity = new_capacity;            
+        route_table->capacity = new_capacity;
     }
 
     struct route *route = (struct route *)malloc(sizeof(struct route));
@@ -50,16 +50,16 @@ struct routes* insert_route(
     *route = (struct route) {
         .callback = callback,
         .method = method,
-        .path = strdup(path)    
+        .path = strdup(path)
     };
-    
-    if (!route->path) {        
-        free(route);        
+
+    if (!route->path) {
+        free(route);
         return NULL;
     }
 
     route_table->items[route_table->size++] = route;
-    
+
     return route_table;
 }
 
@@ -93,7 +93,7 @@ struct http_headers* insert_header(struct http_headers *headers, char *key, char
             return headers;
         }
     }
-    
+
     // If key doesn't exist, create new header
     if (headers->capacity == headers->size) {
         int new_capacity = headers->capacity * 2;
@@ -101,7 +101,7 @@ struct http_headers* insert_header(struct http_headers *headers, char *key, char
         struct http_header** new_headers = realloc(headers->items, new_capacity * sizeof(struct http_header*));
 
         headers->items = new_headers;
-        headers->capacity = new_capacity;            
+        headers->capacity = new_capacity;
     }
 
     struct http_header *header = (struct http_header *)malloc(sizeof(struct http_header));
@@ -125,7 +125,7 @@ struct http_headers* insert_header(struct http_headers *headers, char *key, char
         .value = new_value
     };
     headers->items[headers->size++] = header;
-    
+
     return headers;
 }
 
@@ -135,7 +135,7 @@ void destruct_http_headers(struct http_headers *headers) {
         free(parsed_header->key);
         free(parsed_header->value);
         free(parsed_header);
-    }        
+    }
     free(headers->items);
     headers->capacity = 0;
     headers->size = 0;
@@ -151,7 +151,7 @@ void destruct_http_request(struct http_request *request) {
     if (request->path)
         free(request->path);
 
-    free_query_parameters(&request->query_parameters);    
+    free_query_parameters(&request->query_parameters);
 }
 
 struct http_header *parse_http_header(char *header_string) {
@@ -166,7 +166,7 @@ struct http_header *parse_http_header(char *header_string) {
     header->value = NULL;
 
     /* trim prefix */
-    start_of_key = find_non_space(header_string);  
+    start_of_key = find_non_space(header_string);
 
     offset = (int)(start_of_key - header_string);
 
@@ -184,23 +184,23 @@ struct http_header *parse_http_header(char *header_string) {
 
         end_of_key--;
         /* trim suffix */
-        while (is_non_space(*end_of_key)) 
+        while (is_non_space(*end_of_key))
             end_of_key--;
 
         length = (int)(end_of_key - start_of_key) + 1;
-        
+
         header->key = (char*)malloc(length + 1);
         strncpy(header->key, start_of_key, length);
         header->key[length] = '\0';
     } else {
         /* Case of quoted string. now we cannnot perform like above, because ':' can be inside of key name. */
         /* At now, our target is to find ` ": `, double quotes followed by ':'. */
-        
+
         char *end_of_key = start_of_key + 1;
         int length;
         /* find first non-whitespace except for double quotes at start */
         char *last_non_space_at = find_non_space(start_of_key + 1);
-        
+
 
         end_of_key = last_non_space_at + 1;
 
@@ -208,27 +208,27 @@ struct http_header *parse_http_header(char *header_string) {
             if (!is_non_space(*end_of_key))
                 last_non_space_at = end_of_key;
         }
-        
+
         if (end_of_key == end_of_header) {
             goto parse_header_error;
         }
 
-        offset = (int)(end_of_key - start_of_key) + 1;        
+        offset = (int)(end_of_key - start_of_key) + 1;
         end_of_key = last_non_space_at - 1;
         start_of_key++;
 
         length = (int)(end_of_key - start_of_key) + 1;
-        
+
         header->key = (char*)malloc(length + 1);
         strncpy(header->key, start_of_key, length);
         header->key[length] = '\0';
     }
-    
+
 
     /* step to parse value */
 
     /* trim prefix */
-    start_of_value = find_non_space(header_string + offset);  
+    start_of_value = find_non_space(header_string + offset);
 
     offset = (int)(start_of_value - header_string);
 
@@ -244,23 +244,23 @@ struct http_header *parse_http_header(char *header_string) {
 
         end_of_value--;
         /* trim suffix */
-        while (is_non_space(*end_of_value)) 
+        while (is_non_space(*end_of_value))
             end_of_value--;
 
         length = (int)(end_of_value - start_of_value) + 1;
-        
+
         header->value = (char*)malloc(length + 1);
         strncpy(header->value, start_of_value, length);
         header->value[length] = '\0';
     } else {
         /* Case of quoted string. now we cannnot perform like above, because ':' can be inside of value string. */
         /* At now, our target is to find ` "<CRLF> `, double quotes followed by "\r\n". */
-        
+
         char *end_of_value = start_of_value + 1;
         int length;
         /* find first non-whitespace except for double quotes at start */
         char *last_non_space_at = find_non_space(start_of_value + 1);
-        
+
 
         end_of_value = last_non_space_at + 1;
 
@@ -268,7 +268,7 @@ struct http_header *parse_http_header(char *header_string) {
             if (!is_non_space(*end_of_value))
                 last_non_space_at = end_of_value;
         }
-        
+
         if (*last_non_space_at != '"') {
             goto parse_header_error;
         }
@@ -278,12 +278,12 @@ struct http_header *parse_http_header(char *header_string) {
         start_of_value++;
 
         length = (int)(end_of_value - start_of_value) + 1;
-        
+
         header->value = (char*)malloc(length + 1);
         strncpy(header->value, start_of_value, length);
         header->value[length] = '\0';
     }
- 
+
     return header;
 
 parse_header_error:
@@ -305,22 +305,22 @@ struct http_headers parse_http_headers(char *headers_string) {
         .capacity = INITIAL_CAPACITTY,
         .items = malloc(INITIAL_CAPACITTY * sizeof(struct http_header))
     };
-    
+
     int offset = 0;
     while (headers_string[offset] != '\0') {
         char *CRLF_pointer = strstr(headers_string + offset, "\r\n");
 
-        
+
         if (CRLF_pointer == NULL) { /* parse failed */
             destruct_http_headers(&headers_ret);
             break;
         } else if (CRLF_pointer == (headers_string + offset)) { /* (normal break condition) there is no more header to parse */
             break;
         }
-        
+
 
         struct http_header *parsed_header = parse_http_header(headers_string + offset);
-        
+
 
         if (parsed_header == NULL) { /* parse failed */
             destruct_http_headers(&headers_ret);
@@ -335,13 +335,13 @@ struct http_headers parse_http_headers(char *headers_string) {
             struct http_header** new_headers = realloc(headers_ret.items, new_capacity * sizeof(struct http_header*));
 
             headers_ret.items = new_headers;
-            headers_ret.capacity = new_capacity;            
+            headers_ret.capacity = new_capacity;
         }
 
         headers_ret.items[headers_ret.size++] = parsed_header;
         offset = (int)(CRLF_pointer - headers_string) + 2;
     }
-        
+
     return headers_ret;
 }
 
@@ -363,7 +363,7 @@ char *http_headers_stringify(struct http_headers *headers) {
         // key + ": " + value + "\r\n"
         // 1. ": " (2 bytes) - separator between key and value
         // 2. "\r\n" (2 bytes) - line terminator for HTTP headers
-        total_length += strlen(header->key) + strlen(header->value) + 4; 
+        total_length += strlen(header->key) + strlen(header->value) + 4;
     }
 
     char *result = (char *)calloc(total_length + 1, sizeof(char));
@@ -392,7 +392,7 @@ char *http_headers_stringify(struct http_headers *headers) {
 struct http_query_parameter parse_http_query_parameter(char* parameter_string){
 
     struct http_query_parameter query_parameter = {};
-    
+
     if (!parameter_string) {
         return query_parameter;
     }
@@ -439,7 +439,7 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
     }
 
     // 쿼리 파라미터가 10개 이상이면 실패
-    if (query_parameters->size >= 10){  
+    if (query_parameters->size >= 10){
         return NULL;
     }
 
@@ -451,9 +451,9 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
         return NULL;
     }
 
-    struct http_query_parameter* new_param = 
+    struct http_query_parameter* new_param =
         (struct http_query_parameter*)malloc(sizeof(struct http_query_parameter));
-    
+
     if (!new_param){
         free(parsed_param.key);
         free(parsed_param.value);
@@ -462,9 +462,9 @@ struct http_query_parameters* insert_query_parameter(struct http_query_parameter
 
     new_param->key = parsed_param.key;
     new_param->value = parsed_param.value;
-    
+
     query_parameters->items[query_parameters->size++] = new_param;
-    
+
     return query_parameters;
 }
 
@@ -475,16 +475,16 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
 
     struct http_query_parameters query_parameters;
     query_parameters.size = 0;
-    query_parameters.items = 
+    query_parameters.items =
         (struct http_query_parameter**)malloc(sizeof(struct http_query_parameter*) * 10);
-    
+
     /* '&' 구분자 처리 */
     char *save_ptr;
 
     char* token = strtok_r(parameters, "&",&save_ptr);
-    
+
     while(token != NULL){
-        
+
         if (insert_query_parameter(&query_parameters, token) == NULL){
             // 오류 발생 시 이미 할당된 메모리 정리
             free_query_parameters(&query_parameters);
@@ -498,7 +498,7 @@ struct http_query_parameters parse_query_parameters(char* parameters_string){
 }
 
 void free_query_parameters(struct http_query_parameters* query_parameters) {
-    
+
     if (!query_parameters) {
         return;
     }
@@ -521,7 +521,7 @@ void free_query_parameters(struct http_query_parameters* query_parameters) {
         free(query_parameters->items);
         query_parameters->items = NULL;
     }
-    
+
     query_parameters->size = 0;
 }
 
@@ -579,7 +579,7 @@ char* http_response_stringify(struct http_response http_response) {
         http_response.status_code,
         status_code_string,
         header_string != NULL ? header_string : "",
-        body 
+        body
     );
 
     if (required_len < 0) {
@@ -721,7 +721,7 @@ struct http_request *parse_http_request(const char *request) {
 
     char *request_buffer = strdup(request);
     const char *header_start;
-    
+
     /* end of http start line */
     char *request_line = strstr(request_buffer, "\r\n");
     if (request_line == NULL) {
@@ -731,12 +731,12 @@ struct http_request *parse_http_request(const char *request) {
     *request_line = '\0';
     header_start = request + (int)(request_line - request_buffer);
 
-    char *method = request_buffer;     
+    char *method = request_buffer;
     if (!method) {
         free(http_request);
         return NULL;
     }
-    char *path_with_query = strstr(request_buffer, " ");    
+    char *path_with_query = strstr(request_buffer, " ");
     if (!path_with_query) {
         free(http_request);
         return NULL;
@@ -802,12 +802,12 @@ struct http_request *parse_http_request(const char *request) {
 
     // Http Request 초기화
     init_http_request(
-        http_request, 
-        http_headers, 
+        http_request,
+        http_headers,
         parsed_method,
-        parsed_version, 
-        body, 
-        path, 
+        parsed_version,
+        body,
+        path,
         http_query_parameters
     );
 
