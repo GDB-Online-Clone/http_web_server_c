@@ -91,40 +91,45 @@ pkill bins/[0-9]\+.out
 - 제 머신에서는 4096 이 최대였습니다.
 
 # GDB Online Clone 사용 방법 
+### 현재 서버는 정적 파일을 전송하지 않습니다
+따라서 정적 파일을 다운로드 받아서 직접 열어야 합니다.
+```bash
+git clone https://github.com/GDB-Online-Clone/ide/ --branch feature/gdb
+```
 ### 실행 줄 인자
-<assets/command_line_arguments.PNG>
+![실행 줄 인자](assets/command_line_arguments.PNG)
 
 ### 컴파일 옵션
-<assets/compile_options.PNG>
+![컴파일 옵션](assets/compile_options.PNG)
 
 ### 컴파일러 및 언어 선택
-<assets/compilers.PNG>
+![컴파일러 및 언어 선택](assets/compilers.PNG)
 
 ### 드래그
-<assets/drag.PNG>
+![드래그](assets/drag.PNG)
 
 ### 입력 데이터 작성
-<assets/input.PNG>
+![입력 데이터 작성](assets/input.PNG)
 
 ### 실행
-<assets/run.PNG>
+![실행](assets/run.PNG)
 
 ### 출력 데이터
-<assets/output.PNG>
+![출력 데이터](assets/output.PNG)
 
 ### 인터렉티브 모드 (실행 중 입력 가능 모드)
-<assets/interactive-mode.PNG>   
+![인터렉티브 모드](assets/interactive-mode.PNG)   
 해당 체크박스를 체크하고 실행하면 됩니다.
 
 ### 인터렉티브 모드에서의 입력 방법
-<assets/enter.PNG>
+![인터렉티브 모드에서의 입력 방법](assets/enter.PNG)   
 입력 데이터 폼에서 입력 후, **화면에 보이는** `Enter` 버튼을 누르면 됩니다.
 
 ### 프로그램 정지
-<assets/stop.PNG>
+![프로그램 정지](assets/stop.PNG)
 
 ### gdb 실행
-<assets/gdb.PNG>
+![gdb 실행](assets/gdb.PNG)
 이후 인터렉티브와 동일합니다.
    
 # 부하 테스트 방법
