@@ -95,6 +95,7 @@ pkill bins/[0-9]\+.out
 따라서 정적 파일을 다운로드 받아서 직접 열어야 합니다.
 ```bash
 git clone https://github.com/GDB-Online-Clone/ide/ --branch feature/gdb
+# 브라우저에서 ide 디렉토리를 들어간 후 index.html 열기
 ```
 ### 실행 줄 인자
 ![실행 줄 인자](assets/command_line_arguments.PNG)
