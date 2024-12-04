@@ -1,5 +1,8 @@
 
+#pragma once
 #include <sys/types.h>
+#include <stdbool.h>
+#include <stdatomic.h>
 
 /**
  * @brief Information of process which created with user source code
@@ -8,7 +11,7 @@ struct process_running {
     pid_t pid;
     FILE *to_child;
     FILE *from_child;
-    int is_running;
+    atomic_bool is_running;
 };
 
 /**

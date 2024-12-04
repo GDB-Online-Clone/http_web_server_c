@@ -10,6 +10,7 @@
 #include <webserver/http.h>
 #include <webserver/utility.h>
 #include <webserver/json.h>
+#include <webserver/runner.h>
 
 #include "service.h"
 
@@ -638,10 +639,12 @@ int main() {
     insert_route(&route_table, "/run/interactive-mode", HTTP_POST, handle_interactive_mode);
     insert_route(&route_table, "/run/debugger", HTTP_POST, handle_debugger);
 
-    struct web_server app = (struct web_server){
+    struct web_server app = (struct web_server) {
         .route_table = &route_table,
         .port_num = 10010,
-        .backlog = 128};
+        .backlog = 128,
+        .threadpool_size = 256     
+    };
 
     run_web_server(app);
     return 0;

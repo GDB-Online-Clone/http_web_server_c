@@ -1,4 +1,5 @@
-CFLAGS = -Wall -std=c2x -g -DDEBUG
+ADD =
+CFLAGS = -std=c2x -fPIC $(ADD)
 LDFLAGS = -I../include -L../libs -lpthread -lwebserver -Wl,-rpath,../libs -Wl,-rpath,libs
 
 bin = prog 
