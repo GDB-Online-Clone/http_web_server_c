@@ -25,6 +25,72 @@ static struct threadpool       *pool;
 static char                    **buffer_list;
 static atomic_bool             *buffer_used;
 
+static char                    *static_files_dir;
+
+
+static struct http_response *get_static_file(char *file_path) {
+    // 1. 응답 구조체 초기화
+    struct http_response *response = malloc(sizeof(struct http_response));
+    if (!response) return NULL;
+
+    struct http_headers response_headers = {
+        .capacity = 4,
+        .size = 0,
+        .items = malloc(4 * sizeof(struct http_header *))
+    };
+
+    char *body = NULL;
+    long file_size = 0;
+
+    if (!response_headers.items) {
+        free(response);
+        return NULL;
+    }
+    
+    insert_header(&response_headers, "Access-Control-Allow-Origin", "*");
+    insert_header(&response_headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    insert_header(&response_headers, "Access-Control-Allow-Headers", "*");
+
+
+    FILE *file_fp = fopen(file_path, "r");
+    if (file_fp == NULL) {
+        response->status_code = HTTP_NOT_FOUND;    
+        response->headers = response_headers;
+        response->http_version = HTTP_1_1;
+        response->body = NULL;
+        return response;
+    }
+
+    fseek(file_fp, 0, SEEK_END);
+    file_size = ftell(file_fp);
+    fseek(file_fp, 0, SEEK_SET);
+
+    fclose(file_fp);
+
+    body = malloc(file_size + 1);    
+    int file_fd = open(file_path, O_RDONLY);
+
+    if (read(file_fd, body, file_size) == -1) {
+        perror("read");
+        close(file_fd);
+        if (body) {
+            free(body);
+        }
+        response->status_code = HTTP_NOT_FOUND;    
+        response->headers = response_headers;
+        response->http_version = HTTP_1_1;
+        response->body = NULL;
+        return response;
+    }
+    body[file_size] = '\0';
+
+    response->http_version = HTTP_1_1;
+    response->status_code = HTTP_OK;
+    response->headers = response_headers;
+    response->body = body;
+    close(file_fd);
+    return response;
+}
 
 static void handle_http_request(void* arg) {
 
@@ -77,7 +143,6 @@ static void handle_http_request(void* arg) {
         goto label_send_response;
     } 
     
-    // @TODO parse_http_request 반환 값을 포인터로 변경
     request = parse_http_request(buffer);
 
     if (request == NULL) {
@@ -91,10 +156,16 @@ static void handle_http_request(void* arg) {
     }
 
     // 라우트 찾기
+    DLOGV("%s\n", request->path);
     found_route = find_route(route_table, request->path, request->method);
 
     if (found_route == NULL) {
-        response = &response_404;
+        char *full_path = malloc(strlen(static_files_dir) + strlen(request->path) + 1);
+        sprintf(full_path, "%s%s", static_files_dir, request->path);
+        response = get_static_file(full_path);
+        if (strcmp(request->path, "/favicon.ico") == 0) {
+            insert_header(&response->headers, "Content-Type", "image/x-icon");
+        }
         goto label_send_response;
     } 
     
@@ -157,6 +228,8 @@ void cleanup(void) {
 }
 
 int run_web_server(struct web_server server) {    
+    static_files_dir = server.static_files_dir;
+    
     response_500 = (struct http_response) {
         .body = NULL,
         .headers = (struct http_headers) {
@@ -250,7 +323,7 @@ int run_web_server(struct web_server server) {
     }
 
     DLOGV("[Server] port: %d, backlog: %d\n", server.port_num, server.backlog);  
-
+    
     while (1) {
         int client_socket;
         if ((client_socket = accept(server_fd, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {

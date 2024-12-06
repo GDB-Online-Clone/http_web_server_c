@@ -24,6 +24,10 @@ struct web_server {
      * @brief Size of threadpool: http request handlers threadpool
      */
     int threadpool_size;
+    /**
+     * @brief Root directory of static files.
+     */
+    char *static_files_dir;
 };
 
 /**

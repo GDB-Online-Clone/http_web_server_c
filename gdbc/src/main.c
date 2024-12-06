@@ -2,6 +2,7 @@
 #define _POSIX_C_SOURCE 200809L
 #endif
 
+#define _GNU_SOURCE
 #include <assert.h>
 #include <ctype.h>
 #include <signal.h>
@@ -159,8 +160,7 @@ static struct http_response *validate_run_request(
 
     return NULL;
 
-    validate_error:
-    destruct_http_headers(&headers);        
+    validate_error:    
     response->status_code = HTTP_BAD_REQUEST;    
     response->headers = headers;
     response->http_version = HTTP_1_1;
@@ -643,7 +643,8 @@ int main() {
         .route_table = &route_table,
         .port_num = 10010,
         .backlog = 128,
-        .threadpool_size = 256     
+        .threadpool_size = 256,
+        .static_files_dir = "ide"
     };
 
     run_web_server(app);
