@@ -80,6 +80,15 @@ static int cleanup_child_process(struct process_running *p_info) {
     fclose(p_info->to_child);
     fclose(p_info->from_child);
 
+    if (p_info->executable_file_path) {
+        remove(p_info->executable_file_path);
+        free(p_info->executable_file_path);
+    }
+    if (p_info->source_code_path) {
+        remove(p_info->source_code_path);
+        free(p_info->source_code_path);
+    }
+
     atomic_store(&p_info->is_running, false);
     return 1;
 }
@@ -95,6 +104,9 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     int from_child_pipe[2] = {-1,-1};
     int to_child_pipe[2] = {-1,-1};    
 
+    PROCESSES[pidx].executable_file_path = NULL;
+    PROCESSES[pidx].source_code_path = NULL;
+
     for (pidx = 0; pidx < MAX_PROCESS; pidx++) {
         bool expected = false;
         if (atomic_compare_exchange_strong(&PROCESSES[pidx].is_running, &expected, true)) {
@@ -107,8 +119,8 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
         goto build_and_run_error;
     }
 
-    sprintf(executable_filename, "bins/%d.out", pcnt++);
-
+    sprintf(executable_filename, "bins/%d.out", pcnt++);    
+    
     /* parse compile_options */
     if (compile_options && compile_options[0] != '\0') {
         c_options = strdup(compile_options);
@@ -141,8 +153,10 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     }
     compile_args[4 + compile_option_cnt] = (char *)NULL;
 
-    PROCESSES[pidx] = (struct process_running){
+    PROCESSES[pidx] = (struct process_running) {
         .is_running = 1,
+        .source_code_path  = strdup(path_to_source_code),
+        .executable_file_path = strdup(executable_filename)
     };
 
     /* 파이프 생성 */
@@ -271,6 +285,10 @@ int build_and_run(const char *path_to_source_code, enum compiler_type compiler_t
     }
     if (to_child_pipe[1] != -1) {
         close(to_child_pipe[1]);
+    }
+    if (pidx != MAX_PROCESS) {
+        free(PROCESSES[pidx].executable_file_path);
+        free(PROCESSES[pidx].source_code_path);
     }
     return -1;
 }

@@ -11,7 +11,9 @@ struct process_running {
     pid_t pid;
     FILE *to_child;
     FILE *from_child;
-    atomic_bool is_running;
+    char *source_code_path;
+    char *executable_file_path;
+    atomic_bool is_running;    
 };
 
 /**
